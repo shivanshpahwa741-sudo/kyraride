@@ -5,8 +5,7 @@ import { Menu, X } from "lucide-react";
 import kyraLogo from "@/assets/kyra-logo.png";
 import { Button } from "@/components/ui/button";
 
-// WhatsApp link - update this with your actual WhatsApp link
-const WHATSAPP_LINK = "https://wa.me/919876543210?text=Hi%20Kyra!%20I'm%20interested%20in%20the%20weekly%20subscription.";
+const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

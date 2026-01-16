@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 
-// WhatsApp link - update this with your actual WhatsApp link
-const WHATSAPP_LINK = "https://wa.me/919876543210?text=Hi%20Kyra!%20I'm%20interested%20in%20the%20weekly%20subscription.";
+const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 
 const CTASection = () => {
   return (
