@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Phone, Clock, Loader2, MapPinned } from "lucide-react";
+import { Clock, Loader2, MapPinned } from "lucide-react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -24,10 +24,13 @@ import { bookingSchema, type BookingSchemaType } from "@/schemas/booking-schema"
 import { calculateFare } from "@/lib/fare-calculator";
 import { calculateDistance, getCurrentLocation, reverseGeocode } from "@/lib/google-maps";
 import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
+import { useAuth } from "@/hooks/useAuth";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 
 export function BookingForm() {
+  const { user } = useAuth();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -38,8 +41,8 @@ export function BookingForm() {
   const form = useForm<BookingSchemaType>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
-      name: "",
-      phone: "",
+      name: user?.name || "",
+      phone: user?.phone || "",
       pickupAddress: "",
       pickupPlaceId: "",
       pickupLat: 0,
@@ -52,6 +55,14 @@ export function BookingForm() {
       selectedDays: [],
     },
   });
+
+  // Update form when user changes
+  useEffect(() => {
+    if (user) {
+      form.setValue("name", user.name);
+      form.setValue("phone", user.phone);
+    }
+  }, [user, form]);
 
   const {
     watch,
@@ -264,54 +275,18 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Personal Information */}
-        <div className="space-y-4">
-          <h3 className="font-display text-lg font-semibold text-foreground">
-            Personal Information
+        {/* User Info Display (Read-only - from auth) */}
+        <div className="p-4 rounded-lg bg-card/50 border border-border/30">
+          <h3 className="font-display text-sm font-medium text-muted-foreground mb-2">
+            Booking for
           </h3>
-
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      placeholder="Enter your full name"
-                      className="pl-10 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      type="tel"
-                      placeholder="10-digit mobile number"
-                      className="pl-10 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-foreground font-semibold">{user?.name}</p>
+              <p className="text-sm text-muted-foreground">+91 {user?.phone}</p>
+            </div>
+            <div className="text-xs text-accent">✓ Verified</div>
+          </div>
         </div>
 
         {/* Location Selection */}

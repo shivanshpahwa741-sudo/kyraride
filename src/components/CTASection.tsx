@@ -20,7 +20,7 @@ const CTASection = () => {
           </p>
 
           <Link
-            to="/subscribe"
+            to="/auth"
             className="inline-block px-12 py-5 bg-accent text-accent-foreground font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-glow"
           >
             Reserve Your Ride
