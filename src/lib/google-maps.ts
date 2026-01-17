@@ -56,3 +56,70 @@ export function extractPlaceDetails(
     lng: place.geometry.location.lng(),
   };
 }
+
+/**
+ * Reverse geocode coordinates to get address details
+ */
+export async function reverseGeocode(
+  lat: number,
+  lng: number
+): Promise<PlaceDetails | null> {
+  return new Promise((resolve) => {
+    if (!window.google?.maps) {
+      console.error("Google Maps not loaded");
+      resolve(null);
+      return;
+    }
+
+    const geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode(
+      { location: { lat, lng } },
+      (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const result = results[0];
+          resolve({
+            address: result.formatted_address || "",
+            placeId: result.place_id || "",
+            lat,
+            lng,
+          });
+        } else {
+          console.error("Geocoding error:", status);
+          resolve(null);
+        }
+      }
+    );
+  });
+}
+
+/**
+ * Get user's current location using browser geolocation
+ */
+export function getCurrentLocation(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.error("Geolocation not supported");
+      resolve(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.error("Geolocation error:", error.message);
+        resolve(null);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  });
+}

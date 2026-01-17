@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Phone, Clock, Loader2 } from "lucide-react";
+import { User, Phone, Clock, Loader2, MapPinned } from "lucide-react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,11 @@ import {
 import { PlacesAutocomplete } from "./PlacesAutocomplete";
 import { DaySelector } from "./DaySelector";
 import { FareBreakdown } from "./FareBreakdown";
+import { RouteMap } from "./RouteMap";
 
 import { bookingSchema, type BookingSchemaType } from "@/schemas/booking-schema";
 import { calculateFare } from "@/lib/fare-calculator";
-import { calculateDistance } from "@/lib/google-maps";
+import { calculateDistance, getCurrentLocation, reverseGeocode } from "@/lib/google-maps";
 import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
@@ -31,6 +32,8 @@ export function BookingForm() {
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationDetected, setLocationDetected] = useState(false);
 
   const form = useForm<BookingSchemaType>({
     resolver: zodResolver(bookingSchema),
@@ -63,6 +66,67 @@ export function BookingForm() {
   const dropLng = watch("dropLng");
   const pickupTime = watch("pickupTime");
   const selectedDays = watch("selectedDays");
+  const pickupAddress = watch("pickupAddress");
+  const dropAddress = watch("dropAddress");
+
+  // Check if both locations are set for showing the map
+  const showRouteMap = pickupLat && pickupLng && dropLat && dropLng && pickupAddress && dropAddress;
+
+  // Auto-detect user's location for pickup
+  const detectCurrentLocation = useCallback(async () => {
+    setIsDetectingLocation(true);
+
+    try {
+      const coords = await getCurrentLocation();
+
+      if (!coords) {
+        toast.error("Could not detect your location. Please enter it manually.");
+        setIsDetectingLocation(false);
+        return;
+      }
+
+      // Wait for Google Maps to load if not already
+      let attempts = 0;
+      while (!window.google?.maps && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!window.google?.maps) {
+        toast.error("Maps not loaded yet. Please enter location manually.");
+        setIsDetectingLocation(false);
+        return;
+      }
+
+      const placeDetails = await reverseGeocode(coords.lat, coords.lng);
+
+      if (placeDetails) {
+        setValue("pickupAddress", placeDetails.address);
+        setValue("pickupPlaceId", placeDetails.placeId);
+        setValue("pickupLat", placeDetails.lat);
+        setValue("pickupLng", placeDetails.lng);
+        setLocationDetected(true);
+        toast.success("Pickup location detected!");
+      } else {
+        toast.error("Could not get address. Please enter it manually.");
+      }
+    } catch (error) {
+      console.error("Location detection error:", error);
+      toast.error("Location detection failed. Please enter manually.");
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  }, [setValue]);
+
+  // Request location on component mount
+  useEffect(() => {
+    // Small delay to ensure Google Maps script has loaded
+    const timer = setTimeout(() => {
+      detectCurrentLocation();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [detectCurrentLocation]);
 
   // Calculate distance when both locations are set
   useEffect(() => {
@@ -143,10 +207,10 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     try {
       const message = buildWhatsAppMessage(data);
       const whatsappUrl = `${WHATSAPP_LINK}&text=${message}`;
-      
+
       // Open WhatsApp in new tab
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-      
+
       setIsSubmitted(true);
       toast.success("Redirecting to WhatsApp...");
     } catch (error) {
@@ -261,14 +325,43 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
             name="pickupAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pickup Location</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Pickup Location</FormLabel>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={detectCurrentLocation}
+                    disabled={isDetectingLocation}
+                    className="text-xs text-accent hover:text-accent/80 h-auto py-1 px-2"
+                  >
+                    {isDetectingLocation ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Detecting...
+                      </>
+                    ) : (
+                      <>
+                        <MapPinned className="mr-1 h-3 w-3" />
+                        Use Current Location
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <FormControl>
-                  <PlacesAutocomplete
-                    placeholder="Enter pickup address"
-                    value={field.value}
-                    onPlaceSelect={handlePickupSelect}
-                    onInputChange={(value) => setValue("pickupAddress", value)}
-                  />
+                  {isDetectingLocation && !pickupAddress ? (
+                    <div className="flex items-center gap-3 h-10 px-3 rounded-md border border-border/50 bg-input">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Detecting your location...</span>
+                    </div>
+                  ) : (
+                    <PlacesAutocomplete
+                      placeholder="Enter pickup address"
+                      value={field.value}
+                      onPlaceSelect={handlePickupSelect}
+                      onInputChange={(value) => setValue("pickupAddress", value)}
+                    />
+                  )}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -293,6 +386,21 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
               </FormItem>
             )}
           />
+
+          {/* Route Map Preview */}
+          {showRouteMap && (
+            <div className="pt-2">
+              <h4 className="text-sm font-medium text-foreground mb-3">Route Preview</h4>
+              <RouteMap
+                pickupLat={pickupLat}
+                pickupLng={pickupLng}
+                dropLat={dropLat}
+                dropLng={dropLng}
+                pickupAddress={pickupAddress}
+                dropAddress={dropAddress}
+              />
+            </div>
+          )}
 
           <FormField
             control={form.control}
