@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import heroAuto from "@/assets/hero-auto.jpg";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
 
@@ -55,12 +54,14 @@ const HeroSection = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          <Link
-            to="/subscribe"
+          <a
+            href="https://wa.me/message/PWIMWJHRYGQRL1"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-block px-12 py-5 bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_0_30px_rgba(232,216,196,0.5)]"
           >
             Reserve Your Ride
-          </Link>
+          </a>
         </motion.div>
 
         {/* Scroll Indicator */}

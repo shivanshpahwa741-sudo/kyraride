@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { APIProvider } from "@react-google-maps/api";
 import Navbar from "@/components/Navbar";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { Loader2 } from "lucide-react";

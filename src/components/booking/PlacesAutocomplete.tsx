@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from "react";
-import { useMapsLibrary } from "@react-google-maps/api";
 import { Input } from "@/components/ui/input";
 import { MapPin, Loader2 } from "lucide-react";
 import type { PlaceDetails } from "@/types/booking";
