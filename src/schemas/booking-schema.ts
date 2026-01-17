@@ -25,7 +25,7 @@ export const bookingSchema = z.object({
     .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please select a valid time"),
 
   selectedDays: z
-    .array(z.enum(["monday", "tuesday", "wednesday", "thursday"]))
+    .array(z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]))
     .min(1, "Please select at least one day"),
 });
 
