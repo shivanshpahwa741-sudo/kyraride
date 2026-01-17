@@ -33,7 +33,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20 md:h-24">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={kyraLogo} alt="Kyra" className="h-8 md:h-10" />
+            <img src={kyraLogo} alt="Kyra" className="h-12 md:h-16" />
           </Link>
 
           {/* Desktop Navigation */}

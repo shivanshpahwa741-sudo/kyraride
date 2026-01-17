@@ -27,7 +27,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <img src={kyraLogo} alt="Kyra" className="h-16 md:h-20 mx-auto" />
+          <img src={kyraLogo} alt="Kyra" className="h-20 md:h-28 mx-auto" />
         </motion.div>
 
         {/* Tagline */}

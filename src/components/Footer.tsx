@@ -12,7 +12,7 @@ const Footer = () => {
         {/* Main Footer Content */}
         <div className="flex flex-col items-center text-center mb-12">
           {/* Logo */}
-          <img src={kyraLogo} alt="Kyra" className="h-12 mb-6" />
+          <img src={kyraLogo} alt="Kyra" className="h-16 md:h-20 mb-6" />
           
           {/* Contact */}
           <a 
