@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 
+const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
+
 const CTASection = () => {
   return (
     <section className="py-24 md:py-32 bg-background">
@@ -19,7 +21,7 @@ const CTASection = () => {
           </p>
           
           <a
-            href="https://wa.me/message/PWIMWJHRYGQRL1"
+            href={WHATSAPP_LINK}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block px-12 py-5 bg-accent text-accent-foreground font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-glow"
