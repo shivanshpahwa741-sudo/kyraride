@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
+import MinimalHeader from "@/components/MinimalHeader";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { Loader2 } from "lucide-react";
 
@@ -40,7 +40,7 @@ const Subscribe = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <MinimalHeader />
 
       <main className="pt-24 pb-16">
         <div className="kyra-container">
