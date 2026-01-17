@@ -29,12 +29,10 @@ function generateOTP(): string {
 function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   
-  // If it has country code, remove it
   if (digits.startsWith("91") && digits.length === 12) {
     return digits.slice(2);
   }
   
-  // Return last 10 digits
   if (digits.length >= 10) {
     return digits.slice(-10);
   }
@@ -51,8 +49,10 @@ async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
   }
 
   const url = "https://www.fast2sms.com/dev/bulkV2";
+  const message = `Your KYRA verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`;
 
   try {
+    // Using Quick Transactional route (route: "q") which doesn't require OTP verification
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -62,8 +62,10 @@ async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
         "Cache-Control": "no-cache",
       },
       body: JSON.stringify({
-        route: "otp",
-        variables_values: otp,
+        route: "q",  // Quick transactional - doesn't require DLT/OTP verification
+        message: message,
+        language: "english",
+        flash: 0,
         numbers: phone,
       }),
     });
@@ -72,13 +74,41 @@ async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
 
     if (!response.ok || result.return === false) {
       console.error("Fast2SMS error:", result);
-      return false;
+      
+      // If quick route fails, try the v3 API
+      console.log("Trying Fast2SMS v3 API...");
+      return await sendFast2SMSV3(phone, otp, apiKey);
     }
 
     console.log("SMS sent successfully via Fast2SMS:", result);
     return true;
   } catch (error) {
     console.error("Failed to send SMS:", error);
+    return false;
+  }
+}
+
+async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promise<boolean> {
+  const url = "https://www.fast2sms.com/dev/voice";
+  const message = `Your KYRA verification code is ${otp}. Valid for 5 minutes.`;
+
+  try {
+    // Try the voice/text API as fallback
+    const response = await fetch(`https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=v3&sender_id=TXTIND&message=${encodeURIComponent(message)}&language=english&numbers=${phone}`, {
+      method: "GET",
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.return === false) {
+      console.error("Fast2SMS v3 error:", result);
+      return false;
+    }
+
+    console.log("SMS sent successfully via Fast2SMS v3:", result);
+    return true;
+  } catch (error) {
+    console.error("Failed to send SMS via v3:", error);
     return false;
   }
 }
@@ -107,7 +137,7 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
   }
 
   const otp = generateOTP();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
   const supabase = getSupabaseClient();
 
@@ -140,7 +170,7 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
 
   if (!sent) {
     return new Response(
-      JSON.stringify({ error: "Failed to send OTP. Please try again." }),
+      JSON.stringify({ error: "Failed to send OTP. Please verify your Fast2SMS account or try again later." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -164,7 +194,6 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
   const formattedPhone = formatPhone(phone);
   const supabase = getSupabaseClient();
 
-  // Find the OTP record
   const { data: otpRecord, error: fetchError } = await supabase
     .from("otp_verifications")
     .select("*")
@@ -189,7 +218,6 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
     );
   }
 
-  // Check expiration
   if (new Date(otpRecord.expires_at) < new Date()) {
     await supabase.from("otp_verifications").delete().eq("id", otpRecord.id);
     return new Response(
@@ -198,7 +226,6 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
     );
   }
 
-  // Verify OTP
   if (otpRecord.otp !== otp) {
     return new Response(
       JSON.stringify({ error: "Invalid OTP. Please try again." }),
@@ -206,7 +233,6 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
     );
   }
 
-  // Mark as verified and delete
   await supabase.from("otp_verifications").delete().eq("id", otpRecord.id);
 
   console.log(`OTP verified for ${formattedPhone}`);
