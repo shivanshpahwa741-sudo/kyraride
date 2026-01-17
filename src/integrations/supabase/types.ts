@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      otp_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          name: string
+          otp: string
+          phone: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          name: string
+          otp: string
+          phone: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          name?: string
+          otp?: string
+          phone?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
