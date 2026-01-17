@@ -1,17 +1,16 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import heroAuto from "@/assets/hero-auto.jpg";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
-
-const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 
 const HeroSection = () => {
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
-        <img 
-          src={heroAuto} 
-          alt="Premium EV Autorickshaw" 
+        <img
+          src={heroAuto}
+          alt="Premium EV Autorickshaw"
           className="w-full h-full object-cover"
         />
         {/* Gradient Overlay */}
@@ -56,14 +55,12 @@ const HeroSection = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/subscribe"
             className="inline-block px-12 py-5 bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_0_30px_rgba(232,216,196,0.5)]"
           >
             Reserve Your Ride
-          </a>
+          </Link>
         </motion.div>
 
         {/* Scroll Indicator */}

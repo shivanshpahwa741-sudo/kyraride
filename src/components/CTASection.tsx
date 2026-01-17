@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-
-const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
+import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
@@ -19,15 +18,13 @@ const CTASection = () => {
           <p className="text-muted-foreground text-lg mb-12">
             Join thousands of women in Bangalore who have made the switch to safe, reliable, and consistent commutes.
           </p>
-          
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <Link
+            to="/subscribe"
             className="inline-block px-12 py-5 bg-accent text-accent-foreground font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-glow"
           >
             Reserve Your Ride
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>
