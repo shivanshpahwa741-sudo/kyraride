@@ -1,13 +1,26 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { BookingForm } from "@/components/booking/BookingForm";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 // Google Maps API Key (publishable client-side key)
 const GOOGLE_MAPS_API_KEY = "AIzaSyCosDGgQqodf2DpG-a8QTwNXSBrotP-NAA";
 
 const Subscribe = () => {
+  const navigate = useNavigate();
+  const { user, isLoading, logout } = useAuth();
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, isLoading, navigate]);
+
   // Load Google Maps script
   useEffect(() => {
     if (window.google?.maps) return;
@@ -23,6 +36,25 @@ const Subscribe = () => {
     };
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -36,9 +68,20 @@ const Subscribe = () => {
               <ArrowLeft className="h-5 w-5" />
               <span className="font-medium">Back to Home</span>
             </Link>
-            <span className="font-display text-lg font-semibold text-foreground">
-              KYRA
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                Hi, <span className="text-foreground font-medium">{user.name}</span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
