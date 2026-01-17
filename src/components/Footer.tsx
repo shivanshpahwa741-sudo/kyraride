@@ -1,5 +1,5 @@
 import { Phone } from "lucide-react";
-import kyraLogo from "@/assets/kyra-logo.png";
+import kyraLogo from "@/assets/kyra-logo-dark.png";
 
 const CONTACT_NUMBER = "+91 96866 38787";
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
