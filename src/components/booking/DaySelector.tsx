@@ -1,4 +1,3 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { WeekDay } from "@/types/booking";
 
@@ -13,6 +12,9 @@ const DAYS: { value: WeekDay; label: string; shortLabel: string }[] = [
   { value: "tuesday", label: "Tuesday", shortLabel: "Tue" },
   { value: "wednesday", label: "Wednesday", shortLabel: "Wed" },
   { value: "thursday", label: "Thursday", shortLabel: "Thu" },
+  { value: "friday", label: "Friday", shortLabel: "Fri" },
+  { value: "saturday", label: "Saturday", shortLabel: "Sat" },
+  { value: "sunday", label: "Sunday", shortLabel: "Sun" },
 ];
 
 export function DaySelector({
@@ -31,29 +33,26 @@ export function DaySelector({
   return (
     <div className="space-y-3">
       <Label className="text-foreground font-medium">Select Days</Label>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
         {DAYS.map((day) => (
-          <label
+          <button
             key={day.value}
+            type="button"
+            onClick={() => !disabled && toggleDay(day.value)}
+            disabled={disabled}
             className={`
-              flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all
+              flex items-center justify-center p-3 rounded-lg border transition-all font-medium text-sm
               ${
                 selectedDays.includes(day.value)
-                  ? "bg-accent/20 border-accent text-foreground"
+                  ? "bg-[hsl(351,55%,12%)] border-accent text-[hsl(32,35%,87%)]"
                   : "bg-input border-border/50 text-muted-foreground hover:border-accent/50"
               }
-              ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+              ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
           >
-            <Checkbox
-              checked={selectedDays.includes(day.value)}
-              onCheckedChange={() => !disabled && toggleDay(day.value)}
-              disabled={disabled}
-              className="sr-only"
-            />
-            <span className="text-sm font-medium hidden sm:inline">{day.label}</span>
-            <span className="text-sm font-medium sm:hidden">{day.shortLabel}</span>
-          </label>
+            <span className="hidden sm:inline">{day.shortLabel}</span>
+            <span className="sm:hidden">{day.shortLabel.charAt(0)}</span>
+          </button>
         ))}
       </div>
     </div>

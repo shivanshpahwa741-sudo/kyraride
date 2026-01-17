@@ -10,7 +10,7 @@ export interface DistanceResult {
   durationMinutes: number;
 }
 
-export type WeekDay = "monday" | "tuesday" | "wednesday" | "thursday";
+export type WeekDay = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 
 export interface FareConfig {
   baseFare: number;
