@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Playfair Display", "serif"],
+        display: ["Libre Baskerville", "serif"],
         sans: ["Inter", "sans-serif"],
       },
       colors: {
@@ -52,16 +52,16 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         kyra: {
-          maroon: {
-            dark: "hsl(var(--kyra-maroon-dark))",
-            DEFAULT: "hsl(var(--kyra-maroon))",
-            light: "hsl(var(--kyra-maroon-light))",
+          burgundy: {
+            dark: "hsl(var(--kyra-burgundy-dark))",
+            DEFAULT: "hsl(var(--kyra-burgundy))",
+            light: "hsl(var(--kyra-burgundy-light))",
           },
-          cream: {
-            DEFAULT: "hsl(var(--kyra-cream))",
-            dark: "hsl(var(--kyra-cream-dark))",
+          beige: {
+            DEFAULT: "hsl(var(--kyra-beige))",
+            dark: "hsl(var(--kyra-beige-dark))",
           },
-          taupe: "hsl(var(--kyra-taupe))",
+          gold: "hsl(var(--kyra-gold))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -93,31 +93,28 @@ export default {
           to: { opacity: "1" },
         },
         "slide-up": {
-          from: { opacity: "0", transform: "translateY(30px)" },
+          from: { opacity: "0", transform: "translateY(40px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        "pulse-soft": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.6s ease-out forwards",
-        "slide-up": "slide-up 0.8s ease-out forwards",
-        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.8s ease-out forwards",
+        "slide-up": "slide-up 1s ease-out forwards",
+        "scale-in": "scale-in 0.6s ease-out forwards",
       },
       backgroundImage: {
-        "gradient-primary": "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--kyra-maroon-dark)) 100%)",
-        "gradient-hero": "linear-gradient(180deg, hsl(var(--background) / 0.9) 0%, hsl(var(--kyra-maroon-dark) / 0.95) 100%)",
-        "gradient-button": "linear-gradient(135deg, hsl(351 40% 35%) 0%, hsl(var(--background)) 100%)",
-        "gradient-card": "linear-gradient(145deg, hsl(var(--background) / 0.8) 0%, hsl(var(--kyra-maroon-dark) / 0.9) 100%)",
+        "gradient-hero": "linear-gradient(180deg, hsl(var(--background) / 0.4) 0%, hsl(var(--kyra-burgundy-dark) / 0.95) 100%)",
+        "gradient-card": "linear-gradient(145deg, hsl(var(--card) / 0.9) 0%, hsl(var(--kyra-burgundy-dark) / 0.95) 100%)",
       },
       boxShadow: {
-        soft: "0 4px 20px hsl(351 60% 10% / 0.3)",
-        glow: "0 0 30px hsl(32 40% 87% / 0.15)",
-        button: "0 4px 15px hsl(351 60% 10% / 0.4)",
+        soft: "0 4px 30px hsl(351 60% 5% / 0.5)",
+        glow: "0 0 40px hsl(32 35% 87% / 0.15)",
       },
     },
   },

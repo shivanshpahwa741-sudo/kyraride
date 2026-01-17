@@ -1,65 +1,36 @@
-import { Heart, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 import kyraLogo from "@/assets/kyra-logo.png";
 
-// Contact number - update with your actual number
-const CONTACT_NUMBER = "+91 98765 43210";
-const WHATSAPP_LINK = "https://wa.me/919876543210";
+const CONTACT_NUMBER = "+91 96866 38787";
+const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 const INSTAGRAM_LINK = "https://instagram.com/kyramobility";
 
 const Footer = () => {
   return (
-    <footer id="contact" className="py-12 border-t border-border/30">
+    <footer id="contact" className="py-16 border-t border-border/20 bg-card/30">
       <div className="kyra-container">
-        {/* Contact Section */}
-        <div className="text-center mb-10">
-          <h3 className="font-display text-xl font-semibold text-foreground mb-4">
-            Contact Us
-          </h3>
+        {/* Main Footer Content */}
+        <div className="flex flex-col items-center text-center mb-12">
+          {/* Logo */}
+          <img src={kyraLogo} alt="Kyra" className="h-12 mb-6" />
+          
+          {/* Contact */}
           <a 
             href={`tel:${CONTACT_NUMBER.replace(/\s/g, '')}`}
-            className="inline-flex items-center gap-2 text-accent hover:text-accent/80 transition-colors text-lg font-medium"
+            className="inline-flex items-center gap-3 text-accent hover:text-accent/80 transition-colors text-xl font-medium mb-8"
           >
             <Phone className="w-5 h-5" />
             {CONTACT_NUMBER}
           </a>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <img src={kyraLogo} alt="Kyra" className="h-8" />
-            <span className="text-muted-foreground text-sm">
-              By Women, For Women
-            </span>
-          </div>
-
-          {/* Links */}
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#home" className="hover:text-foreground transition-colors">
-              Home
-            </a>
-            <a href="#about" className="hover:text-foreground transition-colors">
-              About
-            </a>
-            <a href="#subscribe" className="hover:text-foreground transition-colors">
-              Subscribe
-            </a>
-            <a href="#privacy" className="hover:text-foreground transition-colors">
-              Privacy
-            </a>
-            <a href="#terms" className="hover:text-foreground transition-colors">
-              Terms
-            </a>
-          </div>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {/* Instagram */}
             <a
               href={INSTAGRAM_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-10 h-10 rounded-full bg-card/50 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/50 transition-all"
+              className="w-12 h-12 rounded-full bg-card border border-border/30 flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/50 transition-all duration-300"
               aria-label="Follow us on Instagram"
             >
               <svg
@@ -76,7 +47,7 @@ const Footer = () => {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-10 h-10 rounded-full bg-card/50 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/50 transition-all"
+              className="w-12 h-12 rounded-full bg-card border border-border/30 flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/50 transition-all duration-300"
               aria-label="Contact us on WhatsApp"
             >
               <svg
@@ -91,13 +62,10 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 pt-6 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <span>Made with</span>
-            <Heart className="w-4 h-4 text-accent fill-accent" />
-            <span>in Bengaluru</span>
-          </div>
-          <span>© {new Date().getFullYear()} Kyra. All rights reserved.</span>
+        <div className="pt-8 border-t border-border/20 text-center">
+          <p className="text-muted-foreground text-sm">
+            © {new Date().getFullYear()} Kyra. All rights reserved. Made with care in Bengaluru.
+          </p>
         </div>
       </div>
     </footer>

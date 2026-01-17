@@ -2,70 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kyra Design System - Dark Elegant Maroon Theme */
+/* Kyra Design System - Premium Dark Burgundy Theme (Shoffr-inspired) */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
-    /* Core Kyra Colors - HSL Values */
-    --background: 351 52% 24%; /* #561C24 - Deep Maroon */
-    --foreground: 32 47% 93%; /* #f5e6d3 - Warm Cream */
+    /* Core Kyra Colors - HSL Values - Deep Burgundy Theme */
+    --background: 351 55% 12%; /* Deep burgundy black */
+    --foreground: 32 35% 87%; /* Champagne beige #E8D8C4 */
 
-    --card: 351 55% 20%; /* Slightly darker maroon for cards */
-    --card-foreground: 32 47% 93%;
+    --card: 351 50% 10%; /* Darker burgundy for cards */
+    --card-foreground: 32 35% 87%;
 
-    --popover: 351 60% 16%;
-    --popover-foreground: 32 47% 93%;
+    --popover: 351 55% 8%;
+    --popover-foreground: 32 35% 87%;
 
-    --primary: 351 40% 30%; /* #6D2932 - Primary Maroon */
-    --primary-foreground: 32 40% 87%; /* #E8D8C4 - Cream text */
+    --primary: 32 35% 87%; /* Champagne beige as primary */
+    --primary-foreground: 351 55% 12%; /* Dark burgundy text on beige */
 
-    --secondary: 32 20% 68%; /* #C7B7A3 - Taupe accent */
-    --secondary-foreground: 351 52% 24%;
+    --secondary: 351 45% 20%; /* Muted burgundy */
+    --secondary-foreground: 32 35% 87%;
 
-    --muted: 351 45% 18%;
-    --muted-foreground: 32 30% 70%;
+    --muted: 351 40% 15%;
+    --muted-foreground: 32 25% 60%;
 
-    --accent: 32 40% 87%; /* #E8D8C4 */
-    --accent-foreground: 351 52% 15%;
+    --accent: 32 35% 87%; /* Champagne beige accent */
+    --accent-foreground: 351 55% 12%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 32 47% 93%;
+    --destructive-foreground: 32 35% 87%;
 
-    --border: 351 40% 28%;
-    --input: 351 40% 22%;
-    --ring: 32 40% 70%;
+    --border: 351 35% 20%;
+    --input: 351 40% 15%;
+    --ring: 32 35% 70%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Custom Kyra tokens */
-    --kyra-maroon-dark: 351 60% 15%; /* #380e18 */
-    --kyra-maroon: 351 52% 24%; /* #561C24 */
-    --kyra-maroon-light: 351 40% 30%; /* #6D2932 */
-    --kyra-cream: 32 47% 93%; /* #f5e6d3 */
-    --kyra-cream-dark: 32 40% 87%; /* #E8D8C4 */
-    --kyra-taupe: 32 20% 68%; /* #C7B7A3 */
+    --kyra-burgundy-dark: 351 60% 8%; /* Very deep burgundy */
+    --kyra-burgundy: 351 55% 12%; /* #561C24 base */
+    --kyra-burgundy-light: 351 50% 18%; /* Lighter burgundy */
+    --kyra-beige: 32 35% 87%; /* #E8D8C4 Champagne beige */
+    --kyra-beige-dark: 32 30% 75%; /* Darker beige */
+    --kyra-gold: 40 45% 65%; /* Subtle gold accent */
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(351 40% 30%) 0%, hsl(351 60% 15%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(351 52% 24% / 0.9) 0%, hsl(351 60% 15% / 0.95) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(351 40% 35%) 0%, hsl(351 52% 24%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(351 52% 24% / 0.8) 0%, hsl(351 60% 15% / 0.9) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(351 55% 12% / 0.4) 0%, hsl(351 60% 8% / 0.95) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(351 50% 10% / 0.9) 0%, hsl(351 60% 8% / 0.95) 100%);
 
     /* Shadows */
-    --shadow-soft: 0 4px 20px hsl(351 60% 10% / 0.3);
-    --shadow-glow: 0 0 30px hsl(32 40% 87% / 0.15);
-    --shadow-button: 0 4px 15px hsl(351 60% 10% / 0.4);
+    --shadow-soft: 0 4px 30px hsl(351 60% 5% / 0.5);
+    --shadow-glow: 0 0 40px hsl(32 35% 87% / 0.1);
 
-    --sidebar-background: 351 60% 15%;
-    --sidebar-foreground: 32 47% 93%;
-    --sidebar-primary: 32 40% 87%;
-    --sidebar-primary-foreground: 351 52% 24%;
-    --sidebar-accent: 351 45% 25%;
-    --sidebar-accent-foreground: 32 47% 93%;
-    --sidebar-border: 351 40% 25%;
-    --sidebar-ring: 32 40% 70%;
+    --sidebar-background: 351 60% 8%;
+    --sidebar-foreground: 32 35% 87%;
+    --sidebar-primary: 32 35% 87%;
+    --sidebar-primary-foreground: 351 55% 12%;
+    --sidebar-accent: 351 45% 18%;
+    --sidebar-accent-foreground: 32 35% 87%;
+    --sidebar-border: 351 35% 18%;
+    --sidebar-ring: 32 35% 70%;
   }
 }
 
@@ -84,48 +81,55 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Libre Baskerville', serif;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .kyra-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+  }
+
+  .kyra-section {
+    @apply py-24 md:py-32 lg:py-40;
   }
 
   .kyra-glass {
-    @apply backdrop-blur-md bg-card/60 border border-border/50;
+    @apply backdrop-blur-md bg-card/60 border border-border/30;
   }
 
   .kyra-card {
-    @apply rounded-xl p-6 kyra-glass;
+    @apply rounded-xl p-8 bg-card border border-border/30;
     box-shadow: var(--shadow-soft);
   }
 
-  .kyra-input {
-    @apply w-full px-4 py-3 rounded-lg bg-input border border-border/50 
-           text-foreground placeholder:text-muted-foreground
-           focus:outline-none focus:ring-2 focus:ring-ring/50
-           transition-all duration-200;
+  /* Premium button style */
+  .kyra-btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 
+           bg-accent text-accent-foreground font-semibold
+           rounded-lg transition-all duration-300 ease-out
+           hover:scale-105 hover:shadow-glow
+           focus:outline-none focus:ring-2 focus:ring-accent/50;
   }
 }
 
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(32 47% 93%) 0%, hsl(32 40% 87%) 100%);
+    background-image: linear-gradient(135deg, hsl(32 35% 87%) 0%, hsl(40 45% 75%) 100%);
   }
 
   .animate-fade-in {
-    animation: fadeIn 0.6s ease-out forwards;
+    animation: fadeIn 0.8s ease-out forwards;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.8s ease-out forwards;
+    animation: slideUp 1s ease-out forwards;
   }
 
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
+  .animate-scale-in {
+    animation: scaleIn 0.6s ease-out forwards;
   }
 }
 
@@ -141,7 +145,7 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
@@ -149,11 +153,13 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  50% {
-    transform: translateY(-10px);
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

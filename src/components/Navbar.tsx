@@ -1,60 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import kyraLogo from "@/assets/kyra-logo.png";
-import { Button } from "@/components/ui/button";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
-    { href: "#about", label: "About" },
-    { href: "#subscribe", label: "Subscribe" },
+    { href: "#faq", label: "FAQ" },
     { href: "#contact", label: "Contact" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border/20">
+    <nav 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-background/95 backdrop-blur-md border-b border-border/20" : "bg-transparent"
+      }`}
+    >
       <div className="kyra-container">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20 md:h-24">
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <img src={kyraLogo} alt="Kyra" className="h-8 md:h-10" />
           </Link>
 
-          {/* Desktop Navigation - Center */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-foreground/80 hover:text-foreground transition-colors duration-200 font-medium"
+                className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
               >
                 {link.label}
               </a>
             ))}
-          </div>
-
-          {/* Desktop Right Side */}
-          <div className="hidden md:flex items-center gap-4">
-            <button className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground transition-colors">
-              <Globe className="w-4 h-4" />
-              <span className="text-sm font-medium">EN</span>
-            </button>
             <a
-              href="#about"
-              className="text-foreground/80 hover:text-foreground transition-colors font-medium"
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2.5 bg-accent text-accent-foreground font-semibold rounded-lg transition-all duration-300 hover:scale-105"
             >
-              Help
+              Reserve Now
             </a>
-            <Button variant="hero" size="default" asChild>
-              <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
-                Subscribe
-              </a>
-            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,27 +77,26 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-background border-b border-border/20"
           >
-            <div className="kyra-container py-4 flex flex-col gap-4">
+            <div className="kyra-container py-6 flex flex-col gap-4">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-foreground/80 hover:text-foreground transition-colors py-2 font-medium"
+                  className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
                 </a>
               ))}
-              <Button variant="hero" size="lg" className="mt-2" asChild>
-                <a 
-                  href={WHATSAPP_LINK} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Subscribe Now
-                </a>
-              </Button>
+              <a 
+                href={WHATSAPP_LINK} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => setIsOpen(false)}
+                className="mt-4 text-center px-6 py-3 bg-accent text-accent-foreground font-semibold rounded-lg"
+              >
+                Reserve Now
+              </a>
             </div>
           </motion.div>
         )}
