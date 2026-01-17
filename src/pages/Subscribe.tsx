@@ -4,19 +4,16 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BookingForm } from "@/components/booking/BookingForm";
 
+// Google Maps API Key (publishable client-side key)
+const GOOGLE_MAPS_API_KEY = "AIzaSyCosDGgQqodf2DpG-a8QTwNXSBrotP-NAA";
+
 const Subscribe = () => {
   // Load Google Maps script
   useEffect(() => {
     if (window.google?.maps) return;
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
-      console.warn("Google Maps API key not configured");
-      return;
-    }
-
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
