@@ -25,59 +25,57 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Format phone to E.164 format for India
+// Format phone - extract 10 digit Indian number
 function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   
+  // If it has country code, remove it
   if (digits.startsWith("91") && digits.length === 12) {
-    return `+${digits}`;
+    return digits.slice(2);
   }
   
-  if (digits.length === 10) {
-    return `+91${digits}`;
+  // Return last 10 digits
+  if (digits.length >= 10) {
+    return digits.slice(-10);
   }
   
-  if (phone.startsWith("+") && digits.length >= 10) {
-    return phone;
-  }
-  
-  return `+91${digits}`;
+  return digits;
 }
 
-async function sendTwilioSMS(to: string, body: string): Promise<boolean> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
+  const apiKey = Deno.env.get("FAST2SMS_API_KEY");
 
-  if (!accountSid || !authToken || !fromNumber) {
-    console.error("Twilio credentials not configured");
+  if (!apiKey) {
+    console.error("Fast2SMS API key not configured");
     return false;
   }
 
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const url = "https://www.fast2sms.com/dev/bulkV2";
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+        "authorization": apiKey,
+        "Content-Type": "application/json",
+        "Accept": "*/*",
+        "Cache-Control": "no-cache",
       },
-      body: new URLSearchParams({
-        To: to,
-        From: fromNumber,
-        Body: body,
+      body: JSON.stringify({
+        route: "otp",
+        variables_values: otp,
+        numbers: phone,
       }),
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
-      console.error("Twilio error:", result);
+    if (!response.ok || result.return === false) {
+      console.error("Fast2SMS error:", result);
       return false;
     }
 
-    console.log("SMS sent successfully:", result.sid);
+    console.log("SMS sent successfully via Fast2SMS:", result);
     return true;
   } catch (error) {
     console.error("Failed to send SMS:", error);
@@ -100,15 +98,14 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     );
   }
 
-  const cleanPhone = phone.replace(/\D/g, "");
-  if (cleanPhone.length < 10) {
+  const formattedPhone = formatPhone(phone);
+  if (formattedPhone.length !== 10) {
     return new Response(
-      JSON.stringify({ error: "Invalid phone number" }),
+      JSON.stringify({ error: "Invalid phone number. Please enter a 10-digit Indian mobile number." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  const formattedPhone = formatPhone(phone);
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
 
@@ -138,9 +135,8 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     );
   }
 
-  // Send SMS
-  const message = `Your KYRA verification code is: ${otp}. Valid for 5 minutes.`;
-  const sent = await sendTwilioSMS(formattedPhone, message);
+  // Send SMS via Fast2SMS
+  const sent = await sendFast2SMS(formattedPhone, otp);
 
   if (!sent) {
     return new Response(
@@ -195,7 +191,6 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
 
   // Check expiration
   if (new Date(otpRecord.expires_at) < new Date()) {
-    // Delete expired OTP
     await supabase.from("otp_verifications").delete().eq("id", otpRecord.id);
     return new Response(
       JSON.stringify({ error: "OTP expired. Please request a new one." }),
