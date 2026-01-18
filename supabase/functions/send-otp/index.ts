@@ -281,6 +281,67 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
 
   await supabase.from("otp_verifications").delete().eq("id", otpRecord.id);
 
+  // Auto-create or update profile
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("phone", formattedPhone)
+    .maybeSingle();
+
+  let profileId: string;
+
+  if (existingProfile) {
+    // Update existing profile
+    profileId = existingProfile.id;
+    await supabase
+      .from("profiles")
+      .update({ name: otpRecord.name })
+      .eq("id", profileId);
+    console.log(`Updated existing profile for ${formattedPhone}`);
+  } else {
+    // Create new profile
+    const { data: newProfile, error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        name: otpRecord.name,
+        phone: formattedPhone,
+        user_id: crypto.randomUUID(), // Generate a temporary user_id for now
+      })
+      .select("id")
+      .single();
+
+    if (profileError) {
+      console.error("Failed to create profile:", profileError);
+    } else {
+      profileId = newProfile.id;
+      console.log(`Created new profile for ${formattedPhone}`);
+
+      // Sync to Google Sheets for new profiles
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+        
+        await fetch(`${supabaseUrl}/functions/v1/sync-profile-to-sheets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            id: profileId,
+            full_name: otpRecord.name,
+            phone: formattedPhone,
+            created_at: new Date().toISOString(),
+          }),
+        });
+        console.log("Triggered Google Sheets sync");
+      } catch (syncError) {
+        console.error("Failed to trigger sheets sync:", syncError);
+        // Don't fail the verification if sync fails
+      }
+    }
+  }
+
   console.log(`OTP verified for ${formattedPhone}`);
 
   return new Response(
