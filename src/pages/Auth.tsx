@@ -57,11 +57,11 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error(data?.error || "Failed to send OTP");
+        throw new Error((data as any)?.error || error.message || "Failed to send OTP");
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || "Failed to send OTP");
+        throw new Error((data as any)?.error || "Failed to send OTP");
       }
 
       toast.success("OTP sent to your phone!");
@@ -88,11 +88,11 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error(data?.error || "Verification failed");
+        throw new Error((data as any)?.error || error.message || "Verification failed");
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || "Invalid OTP");
+        throw new Error((data as any)?.error || "Invalid OTP");
       }
 
       // Login successful
@@ -116,11 +116,11 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error(data?.error || "Failed to resend OTP");
+        throw new Error((data as any)?.error || error.message || "Failed to resend OTP");
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || "Failed to resend OTP");
+        throw new Error((data as any)?.error || "Failed to resend OTP");
       }
 
       toast.success("OTP resent successfully!");
