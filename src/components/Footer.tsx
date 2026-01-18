@@ -64,12 +64,12 @@ const Footer = () => {
 
         {/* Legal Links */}
         <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-8">
-          <a 
-            href="#contact" 
+          <Link 
+            to="/contact" 
             className="text-muted-foreground hover:text-accent transition-colors text-sm"
           >
             Contact Us
-          </a>
+          </Link>
           <span className="text-border/50">|</span>
           <Link 
             to="/terms" 
