@@ -40,11 +40,55 @@ function formatPhone(phone: string): string {
   return digits;
 }
 
+function toE164India(formattedPhone: string): string {
+  return `+91${formattedPhone}`;
+}
+
+async function sendTwilioSMS(phoneE164: string, otp: string): Promise<boolean> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !fromNumber) {
+    return false;
+  }
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const body = new URLSearchParams({
+    To: phoneE164,
+    From: fromNumber,
+    Body: `Your KYRA verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`,
+  });
+
+  try {
+    const basicAuth = btoa(`${accountSid}:${authToken}`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("Twilio send error:", response.status, text);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Twilio send exception:", error);
+    return false;
+  }
+}
+
 async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
   const apiKey = Deno.env.get("FAST2SMS_API_KEY");
 
   if (!apiKey) {
-    console.error("Fast2SMS API key not configured");
     return false;
   }
 
@@ -56,14 +100,14 @@ async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "authorization": apiKey,
+        authorization: apiKey,
         "Content-Type": "application/json",
-        "Accept": "*/*",
+        Accept: "*/*",
         "Cache-Control": "no-cache",
       },
       body: JSON.stringify({
-        route: "q",  // Quick transactional - doesn't require DLT/OTP verification
-        message: message,
+        route: "q", // Quick transactional
+        message,
         language: "english",
         flash: 0,
         numbers: phone,
@@ -74,29 +118,27 @@ async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
 
     if (!response.ok || result.return === false) {
       console.error("Fast2SMS error:", result);
-      
-      // If quick route fails, try the v3 API
       console.log("Trying Fast2SMS v3 API...");
       return await sendFast2SMSV3(phone, otp, apiKey);
     }
 
-    console.log("SMS sent successfully via Fast2SMS:", result);
     return true;
   } catch (error) {
-    console.error("Failed to send SMS:", error);
+    console.error("Fast2SMS send exception:", error);
     return false;
   }
 }
 
 async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promise<boolean> {
-  const url = "https://www.fast2sms.com/dev/voice";
   const message = `Your KYRA verification code is ${otp}. Valid for 5 minutes.`;
 
   try {
-    // Try the voice/text API as fallback
-    const response = await fetch(`https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=v3&sender_id=TXTIND&message=${encodeURIComponent(message)}&language=english&numbers=${phone}`, {
-      method: "GET",
-    });
+    const response = await fetch(
+      `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=v3&sender_id=TXTIND&message=${encodeURIComponent(message)}&language=english&numbers=${phone}`,
+      {
+        method: "GET",
+      }
+    );
 
     const result = await response.json();
 
@@ -105,10 +147,9 @@ async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promi
       return false;
     }
 
-    console.log("SMS sent successfully via Fast2SMS v3:", result);
     return true;
   } catch (error) {
-    console.error("Failed to send SMS via v3:", error);
+    console.error("Fast2SMS v3 send exception:", error);
     return false;
   }
 }
@@ -155,6 +196,7 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
       otp,
       name,
       expires_at: expiresAt,
+      verified: false,
     });
 
   if (insertError) {
@@ -165,12 +207,16 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     );
   }
 
-  // Send SMS via Fast2SMS
-  const sent = await sendFast2SMS(formattedPhone, otp);
+  // Send SMS (prefer Twilio if configured; fallback to Fast2SMS)
+  const phoneE164 = toE164India(formattedPhone);
+  const sent = (await sendTwilioSMS(phoneE164, otp)) || (await sendFast2SMS(formattedPhone, otp));
 
   if (!sent) {
     return new Response(
-      JSON.stringify({ error: "Failed to send OTP. Please verify your Fast2SMS account or try again later." }),
+      JSON.stringify({
+        error:
+          "Failed to send OTP. Please verify your SMS provider setup (Twilio/others) and try again.",
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -198,7 +244,7 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
     .from("otp_verifications")
     .select("*")
     .eq("phone", formattedPhone)
-    .eq("verified", false)
+    .or("verified.is.null,verified.eq.false")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
