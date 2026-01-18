@@ -2,3 +2,6 @@ project_id = "emtaaofgcqtherqsftbx"
 
 [functions.send-otp]
 verify_jwt = false
+
+[functions.sync-profile-to-sheets]
+verify_jwt = false
