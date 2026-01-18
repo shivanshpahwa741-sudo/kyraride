@@ -1,18 +1,47 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import heroAuto from "@/assets/hero-auto.jpg";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
 
 const HeroSection = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    // Preload the hero image
+    const img = new Image();
+    img.src = heroAuto;
+    img.onload = () => setImageLoaded(true);
+    
+    // If image is already cached, it loads immediately
+    if (img.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background with loading state */}
       <div className="absolute inset-0">
+        {/* Placeholder background while image loads */}
+        <div 
+          className={`absolute inset-0 bg-gradient-to-b from-primary/20 to-background transition-opacity duration-500 ${
+            imageLoaded ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+        
+        {/* Hero Image */}
         <img
           src={heroAuto}
-          alt="Premium EV Autorickshaw"
-          className="w-full h-full object-cover"
+          alt="Premium Autorickshaw"
+          className={`w-full h-full object-cover transition-opacity duration-700 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
+        
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
       </div>
@@ -26,7 +55,13 @@ const HeroSection = () => {
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <img src={kyraLogo} alt="Kyra" className="h-20 md:h-28 mx-auto" />
+          <img 
+            src={kyraLogo} 
+            alt="Kyra" 
+            className="h-20 md:h-28 mx-auto" 
+            loading="eager"
+            fetchPriority="high"
+          />
         </motion.div>
 
         {/* Tagline */}

@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <!-- Preload critical assets for faster loading -->
+    <link rel="preload" href="/src/assets/hero-auto.jpg" as="image" type="image/jpeg" />
+    <link rel="preload" href="/src/assets/kyra-logo-dark.png" as="image" type="image/png" />
+    
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    
     <title>Kyra - Women's Auto Service for Bangalore</title>
     <meta name="description" content="Kyra is Bangalore's first women-driven auto service. Safe, reliable rides by women, for women. Book your ride today." />
     <meta name="author" content="Kyra" />
@@ -17,6 +26,14 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Kyra" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Inline critical CSS for initial render -->
+    <style>
+      html, body { margin: 0; padding: 0; }
+      #root { min-height: 100vh; }
+      /* Initial loading background matching theme */
+      body { background-color: hsl(351, 55%, 12%); }
+    </style>
   </head>
 
   <body>
