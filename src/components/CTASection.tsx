@@ -19,12 +19,22 @@ const CTASection = () => {
             Join thousands of women in Bangalore who have made the switch to safe, reliable, and consistent commutes.
           </p>
 
-          <Link
-            to="/auth"
-            className="inline-block px-12 py-5 bg-accent text-accent-foreground font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-glow"
-          >
-            Reserve Your Ride
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/auth"
+              className="inline-block px-12 py-5 bg-accent text-accent-foreground font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-glow"
+            >
+              Reserve Your Ride
+            </Link>
+            <a
+              href="https://wa.me/message/PWIMWJHRYGQRL1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-12 py-5 bg-transparent border-2 border-accent text-accent font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:bg-accent/10"
+            >
+              Inquire Now
+            </a>
+          </div>
         </motion.div>
       </div>
     </section>
