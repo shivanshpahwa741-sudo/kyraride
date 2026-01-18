@@ -58,7 +58,7 @@ const HeroSection = () => {
         >
           <Link
             to="/auth"
-            className="w-[240px] px-8 py-5 bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_0_30px_rgba(232,216,196,0.5)] text-center"
+            className="inline-flex w-[240px] box-border items-center justify-center px-8 py-5 border-2 border-transparent bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_0_30px_rgba(232,216,196,0.5)] text-center"
           >
             Reserve Your Ride
           </Link>
@@ -66,7 +66,7 @@ const HeroSection = () => {
             href="https://wa.me/message/PWIMWJHRYGQRL1"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-[240px] px-8 py-5 bg-transparent border-2 border-accent text-accent font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:bg-accent/10 text-center box-border"
+            className="inline-flex w-[240px] box-border items-center justify-center px-8 py-5 bg-transparent border-2 border-accent text-accent font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:bg-accent/10 text-center"
           >
             Enquire Now
           </a>
