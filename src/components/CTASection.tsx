@@ -32,7 +32,7 @@ const CTASection = () => {
               rel="noopener noreferrer"
               className="inline-block px-12 py-5 bg-transparent border-2 border-accent text-accent font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:bg-accent/10"
             >
-              Inquire Now
+              Enquire Now
             </a>
           </div>
         </motion.div>
