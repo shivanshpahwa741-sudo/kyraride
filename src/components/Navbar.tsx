@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
@@ -7,6 +7,8 @@ import kyraLogo from "@/assets/kyra-logo-dark.png";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,10 +18,28 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { href: "#faq", label: "FAQ", isAnchor: true },
-    { href: "/contact", label: "Contact", isAnchor: false },
-  ];
+  const handleFaqClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      // Already on homepage, scroll to FAQ
+      const faqSection = document.getElementById("faq");
+      if (faqSection) {
+        faqSection.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate to homepage with FAQ hash
+      navigate("/#faq");
+    }
+    setIsOpen(false);
+  };
+
+  const handleNavClick = (href: string) => {
+    if (location.pathname === href) {
+      // Already on this page, reload it
+      window.location.reload();
+    }
+    setIsOpen(false);
+  };
 
   return (
     <nav
@@ -36,27 +56,23 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-10">
-            {navLinks.map((link) =>
-              link.isAnchor ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
+            <a
+              href="/#faq"
+              onClick={handleFaqClick}
+              className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium cursor-pointer"
+            >
+              FAQ
+            </a>
+            <Link
+              to="/contact"
+              onClick={() => handleNavClick("/contact")}
+              className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
+            >
+              Contact
+            </Link>
             <Link
               to="/subscribe"
+              onClick={() => handleNavClick("/subscribe")}
               className="px-6 py-2.5 bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(232,216,196,0.4)]"
             >
               Reserve Now
@@ -84,30 +100,23 @@ const Navbar = () => {
             className="md:hidden bg-background border-b border-border/20"
           >
             <div className="kyra-container py-6 flex flex-col gap-4">
-              {navLinks.map((link) =>
-                link.isAnchor ? (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                ) : (
-                  <Link
-                    key={link.href}
-                    to={link.href}
-                    className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              )}
+              <a
+                href="/#faq"
+                onClick={handleFaqClick}
+                className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium cursor-pointer"
+              >
+                FAQ
+              </a>
+              <Link
+                to="/contact"
+                onClick={() => handleNavClick("/contact")}
+                className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium"
+              >
+                Contact
+              </Link>
               <Link
                 to="/subscribe"
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleNavClick("/subscribe")}
                 className="mt-4 text-center px-6 py-3 bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold rounded-lg hover:shadow-[0_0_20px_rgba(232,216,196,0.4)]"
               >
                 Reserve Now
