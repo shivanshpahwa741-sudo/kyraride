@@ -26,10 +26,6 @@ const FAQSection = () => {
       answer: "You can cancel your subscription at any time with no penalties. For weekly adjustments, inform us before Saturday 12 PM for changes to take effect the following week.",
     },
     {
-      question: "Why electric vehicles?",
-      answer: "Our fleet of 800+ EVs ensures a silent, clean, and sustainable ride. No emissions, no noise pollution—just smooth, eco-friendly mobility for a greener Bangalore.",
-    },
-    {
       question: "Cancellation & Refunds",
       answer: "For any cancellations or refund enquiries, please reach out to us on WhatsApp. Our team will assist you promptly.",
       hasLink: true,
