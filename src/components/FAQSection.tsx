@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -29,12 +30,18 @@ const FAQSection = () => {
       answer: "Our fleet of 800+ EVs ensures a silent, clean, and sustainable ride. No emissions, no noise pollution—just smooth, eco-friendly mobility for a greener Bangalore.",
     },
     {
-      question: "Terms of Service",
-      answer: "By using Kyra's services, you agree to our terms. Our service is exclusively for women passengers. Subscriptions are billed weekly and can be cancelled anytime. Users must treat drivers with respect; any misconduct may result in immediate account termination. Kyra reserves the right to modify pricing and service areas with prior notice. All disputes are subject to the jurisdiction of courts in Bengaluru, Karnataka.",
+      question: "Cancellation & Refunds",
+      answer: "Full Refund: If Kyra cancels or the driver doesn't show. User Cancellation: Must be done by 11:59 PM the night before your ride. Same-Day cancellations are non-refundable.",
+      hasLink: true,
+      linkText: "Read Full Policy",
+      linkUrl: "/terms",
     },
     {
-      question: "Privacy Policy",
-      answer: "Kyra is committed to protecting your privacy. We collect personal information (name, phone, email, locations) solely to provide our service. We never sell your data. Information is shared only with drivers to facilitate rides and with service providers as necessary. We implement industry-standard security measures to protect your data. For questions, contact us via WhatsApp or the phone number provided.",
+      question: "Ride Policies",
+      answer: "Gender Policy: We do not provide auto-rickshaw services to male adults, even if accompanied by females. Right to Refuse: We reserve the right to cancel rides for disrespectful behavior or policy violations.",
+      hasLink: true,
+      linkText: "Read Full Terms",
+      linkUrl: "/terms",
     },
   ];
 
@@ -71,7 +78,15 @@ const FAQSection = () => {
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
-                  {faq.answer}
+                  <p>{faq.answer}</p>
+                  {faq.hasLink && (
+                    <Link 
+                      to={faq.linkUrl} 
+                      className="inline-block mt-3 text-accent hover:text-accent/80 transition-colors font-medium"
+                    >
+                      {faq.linkText} →
+                    </Link>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             ))}

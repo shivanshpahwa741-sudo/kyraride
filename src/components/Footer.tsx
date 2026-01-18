@@ -1,4 +1,5 @@
 import { Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
 
 const CONTACT_NUMBER = "+91 96866 38787";
@@ -59,6 +60,37 @@ const Footer = () => {
               </svg>
             </a>
           </div>
+        </div>
+
+        {/* Legal Links */}
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-8">
+          <a 
+            href="#contact" 
+            className="text-muted-foreground hover:text-accent transition-colors text-sm"
+          >
+            Contact Us
+          </a>
+          <span className="text-border/50">|</span>
+          <Link 
+            to="/terms" 
+            className="text-muted-foreground hover:text-accent transition-colors text-sm"
+          >
+            Terms & Conditions
+          </Link>
+          <span className="text-border/50">|</span>
+          <Link 
+            to="/terms#refund" 
+            className="text-muted-foreground hover:text-accent transition-colors text-sm"
+          >
+            Refund Policy
+          </Link>
+          <span className="text-border/50">|</span>
+          <Link 
+            to="/terms#privacy" 
+            className="text-muted-foreground hover:text-accent transition-colors text-sm"
+          >
+            Privacy Policy
+          </Link>
         </div>
 
         {/* Copyright */}
