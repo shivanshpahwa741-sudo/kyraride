@@ -54,6 +54,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
             to="/auth"
@@ -61,6 +62,14 @@ const HeroSection = () => {
           >
             Reserve Your Ride
           </Link>
+          <a
+            href="https://wa.me/message/PWIMWJHRYGQRL1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-12 py-5 bg-transparent border-2 border-accent text-accent font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:bg-accent/10"
+          >
+            Enquire Now
+          </a>
         </motion.div>
 
         {/* Scroll Indicator */}
