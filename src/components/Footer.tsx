@@ -3,7 +3,7 @@ import kyraLogo from "@/assets/kyra-logo-dark.png";
 
 const CONTACT_NUMBER = "+91 96866 38787";
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
-const INSTAGRAM_LINK = "https://instagram.com/kyramobility";
+const INSTAGRAM_LINK = "https://www.instagram.com/kyra.rides/";
 
 const Footer = () => {
   return (
