@@ -31,10 +31,11 @@ const FAQSection = () => {
     },
     {
       question: "Cancellation & Refunds",
-      answer: "Full Refund: If Kyra cancels or the driver doesn't show. User Cancellation: Must be done by 11:59 PM the night before your ride. Same-Day cancellations are non-refundable.",
+      answer: "For any cancellations or refund enquiries, please reach out to us on WhatsApp. Our team will assist you promptly.",
       hasLink: true,
-      linkText: "Read Full Policy",
-      linkUrl: "/terms",
+      linkText: "Contact on WhatsApp",
+      linkUrl: "https://wa.me/message/PWIMWJHRYGQRL1",
+      isExternal: true,
     },
     {
       question: "Ride Policies",
@@ -80,12 +81,23 @@ const FAQSection = () => {
                 <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
                   <p>{faq.answer}</p>
                   {faq.hasLink && (
-                    <Link 
-                      to={faq.linkUrl} 
-                      className="inline-block mt-3 text-accent hover:text-accent/80 transition-colors font-medium"
-                    >
-                      {faq.linkText} →
-                    </Link>
+                    faq.isExternal ? (
+                      <a 
+                        href={faq.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-accent hover:text-accent/80 transition-colors font-medium"
+                      >
+                        {faq.linkText} →
+                      </a>
+                    ) : (
+                      <Link 
+                        to={faq.linkUrl} 
+                        className="inline-block mt-3 text-accent hover:text-accent/80 transition-colors font-medium"
+                      >
+                        {faq.linkText} →
+                      </Link>
+                    )
                   )}
                 </AccordionContent>
               </AccordionItem>
