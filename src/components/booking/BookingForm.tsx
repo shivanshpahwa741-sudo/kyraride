@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Loader2, MapPinned } from "lucide-react";
+import { Clock, Loader2, MapPinned, Calendar, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,10 @@ import { calculateFare } from "@/lib/fare-calculator";
 import { calculateDistance, getCurrentLocation, reverseGeocode } from "@/lib/google-maps";
 import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
 import { useAuth } from "@/hooks/useAuth";
+import { getFormattedStartDate, isNextWeekBooking, getTimeUntilCutoff } from "@/lib/booking-dates";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
+const MIN_DAYS_REQUIRED = 2;
 
 export function BookingForm() {
   const { user } = useAuth();
@@ -82,6 +84,15 @@ export function BookingForm() {
 
   // Check if both locations are set for showing the map
   const showRouteMap = pickupLat && pickupLng && dropLat && dropLng && pickupAddress && dropAddress;
+
+  // Booking date calculations
+  const subscriptionStartDate = useMemo(() => getFormattedStartDate(), []);
+  const isNextWeek = useMemo(() => isNextWeekBooking(), []);
+  const timeUntilCutoff = useMemo(() => getTimeUntilCutoff(), []);
+
+  // Minimum days validation
+  const hasMinimumDays = selectedDays.length >= MIN_DAYS_REQUIRED;
+  const showMinDaysError = selectedDays.length > 0 && selectedDays.length < MIN_DAYS_REQUIRED;
 
   // Auto-detect user's location for pickup
   const detectCurrentLocation = useCallback(async () => {
@@ -195,6 +206,7 @@ Drop: ${data.dropAddress}
 Distance: ${distanceKm?.toFixed(1)} km
 
 ⏰ *Schedule:*
+Start Date: ${subscriptionStartDate}
 Pickup Time: ${data.pickupTime}
 Days: ${dayNames}
 
@@ -416,10 +428,44 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
                     onDaysChange={(days) => setValue("selectedDays", days)}
                   />
                 </FormControl>
+                {showMinDaysError && (
+                  <p className="text-sm text-destructive flex items-center gap-1.5 mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Please select at least 2 days to continue.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
+
+        {/* Subscription Start Date Info */}
+        <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+          <div className="flex items-start gap-3">
+            <Calendar className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                Subscription Start Date
+              </p>
+              <p className="text-lg font-semibold text-accent">
+                {subscriptionStartDate}
+              </p>
+              {isNextWeek && (
+                <p className="text-xs text-muted-foreground">
+                  Booking window for this week has closed (Saturday 1:00 PM cutoff)
+                </p>
+              )}
+              {timeUntilCutoff && !isNextWeek && (
+                <p className="text-xs text-muted-foreground">
+                  Book by Saturday 1:00 PM for this start date
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/30">
+                ℹ️ Minimum 2 days per week required for subscription
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Fare Breakdown */}
@@ -436,14 +482,18 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isSubmitting || !fareDetails}
-          className="w-full kyra-btn-primary text-lg py-6"
+          disabled={isSubmitting || !fareDetails || !hasMinimumDays}
+          className={`w-full kyra-btn-primary text-lg py-6 transition-all duration-300 ${
+            !hasMinimumDays ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Submitting...
             </>
+          ) : !hasMinimumDays ? (
+            "Select at least 2 days"
           ) : (
             "Confirm Subscription"
           )}
