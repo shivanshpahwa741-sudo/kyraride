@@ -95,9 +95,9 @@ const Auth = () => {
         throw new Error((data as any)?.error || "Invalid OTP");
       }
 
-      // Login successful
-      login(name, phone);
-      toast.success("Account created successfully!");
+      // Auto-login/signup successful - login handles both cases
+      login(data.name || name, data.phone || phone);
+      toast.success("Welcome to KYRA!");
       navigate("/subscribe");
     } catch (error: any) {
       console.error("Verify OTP error:", error);
@@ -176,10 +176,10 @@ const Auth = () => {
                     <User className="h-8 w-8 text-accent" />
                   </div>
                   <h1 className="font-display text-2xl font-bold text-foreground">
-                    Create Your Account
+                    Sign In to KYRA
                   </h1>
                   <p className="text-muted-foreground">
-                    Enter your details to book your ride
+                    Enter your details to continue
                   </p>
                 </div>
 
