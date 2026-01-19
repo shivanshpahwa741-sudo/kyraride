@@ -19,6 +19,7 @@ import { PlacesAutocomplete } from "./PlacesAutocomplete";
 import { DaySelector } from "./DaySelector";
 import { FareBreakdown } from "./FareBreakdown";
 import { RouteMap } from "./RouteMap";
+import { BookingConfirmation } from "./BookingConfirmation";
 
 import { bookingSchema, type BookingSchemaType } from "@/schemas/booking-schema";
 import { calculateFare } from "@/lib/fare-calculator";
@@ -276,50 +277,23 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     }
   };
 
-  // Success state
-  if (isSubmitted) {
+  // Success state - show full confirmation
+  if (isSubmitted && bookingData && fareDetails && distanceKm && paymentId) {
     return (
-      <div className="text-center py-12 space-y-4">
-        <div className="w-16 h-16 mx-auto bg-accent/20 rounded-full flex items-center justify-center">
-          <svg
-            className="w-8 h-8 text-accent"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <h3 className="font-display text-2xl font-bold text-foreground">
-          Payment Successful!
-        </h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Thank you for subscribing to KYRA. Your booking is confirmed and our team will contact you shortly.
-        </p>
-        {paymentId && (
-          <p className="text-sm text-accent font-mono">
-            Payment ID: {paymentId}
-          </p>
-        )}
-        <Button
-          onClick={() => {
-            setIsSubmitted(false);
-            setPaymentId(null);
-            setBookingData(null);
-            form.reset();
-            setDistanceKm(null);
-          }}
-          variant="outline"
-          className="mt-4"
-        >
-          Book Another Ride
-        </Button>
-      </div>
+      <BookingConfirmation
+        bookingData={bookingData}
+        fareDetails={fareDetails}
+        distanceKm={distanceKm}
+        paymentId={paymentId}
+        subscriptionStartDate={subscriptionStartDate}
+        onBookAnother={() => {
+          setIsSubmitted(false);
+          setPaymentId(null);
+          setBookingData(null);
+          form.reset();
+          setDistanceKm(null);
+        }}
+      />
     );
   }
 
