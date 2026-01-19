@@ -30,7 +30,7 @@ const SubscriptionSection = () => {
             },
             {
               icon: TrendingUp,
-              title: "No Surge Pricing",
+              title: "Fixed-Rate Certainty",
               description: "Pay the same fair rate always. Rain or shine, peak hours or holidays.",
             },
             {
