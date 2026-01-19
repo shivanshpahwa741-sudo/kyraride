@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Loader2, MapPinned, Calendar, AlertCircle } from "lucide-react";
+import { Clock, Loader2, MapPinned, Calendar, AlertCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import { calculateDistance, getCurrentLocation, reverseGeocode } from "@/lib/goo
 import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
 import { useAuth } from "@/hooks/useAuth";
 import { getFormattedStartDate, isNextWeekBooking, getTimeUntilCutoff } from "@/lib/booking-dates";
+import { useRazorpay } from "@/hooks/useRazorpay";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 const MIN_DAYS_REQUIRED = 2;
@@ -39,6 +40,29 @@ export function BookingForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [bookingData, setBookingData] = useState<BookingSchemaType | null>(null);
+
+  // Razorpay hook
+  const { initiatePayment, isLoading: isPaymentLoading } = useRazorpay({
+    onSuccess: (paymentId, orderId) => {
+      setPaymentId(paymentId);
+      setIsSubmitted(true);
+      
+      // Send WhatsApp message with payment confirmation
+      if (bookingData && fareDetails && distanceKm) {
+        const message = buildWhatsAppMessage(bookingData, paymentId);
+        const whatsappUrl = `${WHATSAPP_LINK}&text=${message}`;
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+      
+      toast.success("Payment successful! Booking confirmed.");
+    },
+    onError: (error) => {
+      setIsSubmitting(false);
+      toast.error(error || "Payment failed. Please try again.");
+    },
+  });
 
   const form = useForm<BookingSchemaType>({
     resolver: zodResolver(bookingSchema),
@@ -192,9 +216,11 @@ export function BookingForm() {
   };
 
   // Build WhatsApp message with booking details
-  const buildWhatsAppMessage = (data: BookingSchemaType): string => {
+  const buildWhatsAppMessage = (data: BookingSchemaType, paymentIdStr?: string): string => {
     const dayNames = data.selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ");
-    const message = `🚗 *KYRA Ride Subscription Request*
+    const message = `🚗 *KYRA Ride Subscription - PAID & CONFIRMED*
+
+✅ *Payment ID:* ${paymentIdStr || "N/A"}
 
 📋 *Customer Details:*
 Name: ${data.name}
@@ -210,7 +236,7 @@ Start Date: ${subscriptionStartDate}
 Pickup Time: ${data.pickupTime}
 Days: ${dayNames}
 
-💰 *Fare Estimate:*
+💰 *Paid Amount:*
 Per Ride: ₹${fareDetails?.perRideFare}
 Weekly Total: ₹${fareDetails?.totalWeeklyFare}
 ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
@@ -218,28 +244,34 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     return encodeURIComponent(message);
   };
 
-  // Form submission - opens WhatsApp with booking details
-  const onSubmit = (data: BookingSchemaType) => {
+  // Form submission - initiates payment
+  const onSubmit = async (data: BookingSchemaType) => {
     if (!fareDetails || !distanceKm) {
       toast.error("Please complete all fields to calculate fare");
       return;
     }
 
     setIsSubmitting(true);
+    setBookingData(data);
 
     try {
-      const message = buildWhatsAppMessage(data);
-      const whatsappUrl = `${WHATSAPP_LINK}&text=${message}`;
-
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-
-      setIsSubmitted(true);
-      toast.success("Redirecting to WhatsApp...");
+      const dayNames = data.selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ");
+      
+      // Initiate Razorpay payment with full weekly fare
+      await initiatePayment(
+        fareDetails.totalWeeklyFare,
+        data.name,
+        data.phone,
+        `Weekly Subscription: ${dayNames}`,
+        {
+          pickup: data.pickupAddress,
+          drop: data.dropAddress,
+          days: dayNames,
+          startDate: subscriptionStartDate,
+        }
+      );
     } catch (error) {
-      console.error("Booking error:", error);
-      toast.error("Failed to open WhatsApp. Please try again.");
-    } finally {
+      console.error("Payment initiation error:", error);
       setIsSubmitting(false);
     }
   };
@@ -264,14 +296,21 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
           </svg>
         </div>
         <h3 className="font-display text-2xl font-bold text-foreground">
-          Booking Submitted!
+          Payment Successful!
         </h3>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Thank you for subscribing to KYRA. Our team will contact you shortly to confirm your ride schedule.
+          Thank you for subscribing to KYRA. Your booking is confirmed and our team will contact you shortly.
         </p>
+        {paymentId && (
+          <p className="text-sm text-accent font-mono">
+            Payment ID: {paymentId}
+          </p>
+        )}
         <Button
           onClick={() => {
             setIsSubmitted(false);
+            setPaymentId(null);
+            setBookingData(null);
             form.reset();
             setDistanceKm(null);
           }}
@@ -482,25 +521,29 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isSubmitting || !fareDetails || !hasMinimumDays}
+          disabled={isSubmitting || isPaymentLoading || !fareDetails || !hasMinimumDays}
           className={`w-full kyra-btn-primary text-lg py-6 transition-all duration-300 ${
             !hasMinimumDays ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {isSubmitting ? (
+          {isSubmitting || isPaymentLoading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Submitting...
+              Processing Payment...
             </>
           ) : !hasMinimumDays ? (
             "Select at least 2 days"
           ) : (
-            "Confirm Subscription"
+            <>
+              <CreditCard className="mr-2 h-5 w-5" />
+              Pay ₹{fareDetails?.totalWeeklyFare || 0} & Subscribe
+            </>
           )}
         </Button>
 
         <p className="text-xs text-center text-muted-foreground">
-          By subscribing, you agree to our terms and conditions. Our team will contact you to confirm your booking.
+          Secure payment powered by Razorpay. By subscribing, you agree to our{" "}
+          <a href="/terms" className="text-accent hover:underline">terms and conditions</a>.
         </p>
       </form>
     </Form>
