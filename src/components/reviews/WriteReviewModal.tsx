@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Camera, Upload, Loader2, Star } from "lucide-react";
+import { X, Upload, Loader2, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,51 +56,54 @@ const WriteReviewModal = ({
   };
 
   const handleSubmit = async () => {
-    if (!selectedImage) {
-      toast.error("Please select an image");
-      return;
-    }
-    if (!reviewText.trim()) {
-      toast.error("Please write a review");
+    // Only star rating is required - text and image are optional
+    if (rating < 1 || rating > 5) {
+      toast.error("Please select a rating");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Upload image to storage
-      const fileExt = selectedImage.name.split(".").pop()?.toLowerCase();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      let imageUrl = "";
 
-      console.log("Uploading image:", fileName, "Type:", selectedImage.type, "Size:", selectedImage.size);
+      // Upload image only if selected
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split(".").pop()?.toLowerCase();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("review-images")
-        .upload(fileName, selectedImage, {
-          contentType: selectedImage.type,
-          upsert: false,
-        });
+        console.log("Uploading image:", fileName, "Type:", selectedImage.type, "Size:", selectedImage.size);
 
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("review-images")
+          .upload(fileName, selectedImage, {
+            contentType: selectedImage.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+
+        console.log("Upload successful:", uploadData);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from("review-images")
+          .getPublicUrl(fileName);
+
+        imageUrl = urlData.publicUrl;
+        console.log("Public URL:", imageUrl);
       }
 
-      console.log("Upload successful:", uploadData);
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("review-images")
-        .getPublicUrl(fileName);
-
-      console.log("Public URL:", urlData.publicUrl);
-
-      // Insert review with rating
+      // Insert review with rating (image_url can be empty)
+      const reviewTextValue = reviewText.trim() || "";
       const { data: reviewData, error: insertError } = await supabase.from("reviews").insert({
         user_id: crypto.randomUUID(),
         user_name: userName,
-        review_text: reviewText.trim(),
-        image_url: urlData.publicUrl,
+        review_text: reviewTextValue,
+        image_url: imageUrl,
         rating: rating,
       }).select();
 
@@ -112,7 +115,7 @@ const WriteReviewModal = ({
       console.log("Review inserted:", reviewData);
 
       // Sync review to Google Sheets
-      addReviewToSheets(userName, reviewText.trim(), urlData.publicUrl, rating).catch(err =>
+      addReviewToSheets(userName, reviewTextValue, imageUrl, rating).catch(err =>
         console.error("Failed to sync review to sheets:", err)
       );
 
@@ -183,13 +186,15 @@ const WriteReviewModal = ({
             </div>
           </div>
 
-          {/* Image Upload */}
+          {/* Image Upload (Optional) */}
           <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              Add Photo <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpg,image/jpeg,image/webp,image/gif"
-              capture="environment"
+              accept="image/*"
               onChange={handleImageSelect}
               className="hidden"
             />
@@ -214,31 +219,35 @@ const WriteReviewModal = ({
             ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-32 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-accent/50 hover:bg-secondary/20 transition-all"
+                className="w-full h-24 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-accent/50 hover:bg-secondary/20 transition-all"
               >
                 <div className="flex gap-4">
-                  <Camera className="w-6 h-6 text-muted-foreground" />
                   <Upload className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  Take or upload a photo (PNG, JPG, JPEG)
+                  Tap to upload from device
                 </span>
               </button>
             )}
           </div>
 
-          {/* Review Text */}
-          <Textarea
-            placeholder="Share your experience with KYRA..."
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            className="min-h-[120px] resize-none bg-input border-border/50 text-foreground placeholder:text-muted-foreground"
-          />
+          {/* Review Text (Optional) */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              Your Review <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <Textarea
+              placeholder="Share your experience with KYRA..."
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              className="min-h-[100px] resize-none bg-input border-border/50 text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
 
-          {/* Submit Button */}
+          {/* Submit Button - only requires rating */}
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !selectedImage || !reviewText.trim()}
+            disabled={isSubmitting}
             className="w-full"
             variant="hero"
           >
