@@ -16,7 +16,7 @@ const ServiceCardsSection = () => {
     {
       icon: Banknote,
       title: "Transparent & Fair Pricing",
-      description: "No hidden costs. We follow standard market rates of ₹22.5/km. While we use dynamic pricing during peak hours to ensure a driver is always available for you, we stay committed to being fair and competitive with the local market.",
+      description: "No hidden costs. We follow standard market rates. While we use dynamic pricing post 10 pm to ensure a driver is always available for you, we stay committed to being fair and competitive with the local market.",
     },
   ];
 
