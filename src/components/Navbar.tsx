@@ -64,6 +64,13 @@ const Navbar = () => {
               FAQ
             </a>
             <Link
+              to="/reviews"
+              onClick={() => handleNavClick("/reviews")}
+              className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
+            >
+              Reviews
+            </Link>
+            <Link
               to="/contact"
               onClick={() => handleNavClick("/contact")}
               className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium"
@@ -107,6 +114,13 @@ const Navbar = () => {
               >
                 FAQ
               </a>
+              <Link
+                to="/reviews"
+                onClick={() => handleNavClick("/reviews")}
+                className="text-foreground/70 hover:text-foreground transition-colors py-2 font-medium"
+              >
+                Reviews
+              </Link>
               <Link
                 to="/contact"
                 onClick={() => handleNavClick("/contact")}
