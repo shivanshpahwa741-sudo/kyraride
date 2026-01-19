@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.razorpay-payment]
 verify_jwt = false
+
+[functions.delete-review]
+verify_jwt = false
+
+[functions.submit-review]
+verify_jwt = false
+
+[functions.check-admin]
+verify_jwt = false

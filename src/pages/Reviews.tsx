@@ -26,9 +26,6 @@ interface Review {
   rating: number;
 }
 
-// Admin phone number - change this to your phone number
-const ADMIN_PHONE = "9999999999";
-
 const Reviews = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -37,8 +34,39 @@ const Reviews = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
-  const isAdmin = user?.phone === ADMIN_PHONE;
+  // Check admin status via secure edge function
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.phone) {
+        setIsAdmin(false);
+        setIsCheckingAdmin(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke("check-admin", {
+          body: { phone: user.phone },
+        });
+
+        if (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data?.isAdmin === true);
+        }
+      } catch (err) {
+        console.error("Failed to check admin status:", err);
+        setIsAdmin(false);
+      } finally {
+        setIsCheckingAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.phone]);
 
   const fetchReviews = async () => {
     try {
@@ -116,7 +144,7 @@ const Reviews = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
-          {isAdmin && (
+          {!isCheckingAdmin && isAdmin && (
             <span className="ml-auto text-xs bg-accent/20 text-accent px-2 py-1 rounded">
               Admin Mode
             </span>

@@ -20,6 +20,11 @@ interface VerifyOtpRequest {
 
 type OtpRequest = SendOtpRequest | VerifyOtpRequest;
 
+// Rate limiting constants
+const MAX_OTP_REQUESTS_PER_PHONE = 3; // Max 3 OTP requests per phone
+const RATE_LIMIT_WINDOW_MINUTES = 15; // Within 15 minutes
+const COOLDOWN_SECONDS = 60; // Minimum 60 seconds between requests
+
 // Generate a 6-digit OTP
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -42,6 +47,106 @@ function formatPhone(phone: string): string {
 
 function toE164India(formattedPhone: string): string {
   return `+91${formattedPhone}`;
+}
+
+function getSupabaseClient() {
+  return createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+}
+
+// Check and update rate limits
+async function checkRateLimit(supabase: ReturnType<typeof getSupabaseClient>, phone: string): Promise<{ allowed: boolean; message?: string }> {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+  
+  // Get existing rate limit record
+  const { data: rateLimit, error: fetchError } = await supabase
+    .from("otp_rate_limits")
+    .select("*")
+    .eq("phone", phone)
+    .maybeSingle();
+  
+  if (fetchError) {
+    console.error("Error checking rate limit:", fetchError);
+    // Allow on error to avoid blocking legitimate users
+    return { allowed: true };
+  }
+  
+  if (!rateLimit) {
+    // No existing record - create one and allow
+    const { error: insertError } = await supabase
+      .from("otp_rate_limits")
+      .insert({
+        phone,
+        request_count: 1,
+        first_request_at: now.toISOString(),
+        last_request_at: now.toISOString(),
+      });
+    
+    if (insertError) {
+      console.error("Error creating rate limit record:", insertError);
+    }
+    
+    return { allowed: true };
+  }
+  
+  // Check cooldown (minimum time between requests)
+  const lastRequest = new Date(rateLimit.last_request_at);
+  const secondsSinceLastRequest = (now.getTime() - lastRequest.getTime()) / 1000;
+  
+  if (secondsSinceLastRequest < COOLDOWN_SECONDS) {
+    const waitTime = Math.ceil(COOLDOWN_SECONDS - secondsSinceLastRequest);
+    return { 
+      allowed: false, 
+      message: `Please wait ${waitTime} seconds before requesting another OTP.` 
+    };
+  }
+  
+  // Check if within rate limit window
+  const firstRequest = new Date(rateLimit.first_request_at);
+  
+  if (firstRequest > windowStart) {
+    // Still within the window - check request count
+    if (rateLimit.request_count >= MAX_OTP_REQUESTS_PER_PHONE) {
+      const resetTime = new Date(firstRequest.getTime() + RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+      const minutesRemaining = Math.ceil((resetTime.getTime() - now.getTime()) / 60000);
+      return { 
+        allowed: false, 
+        message: `Too many OTP requests. Please try again in ${minutesRemaining} minutes.` 
+      };
+    }
+    
+    // Increment counter
+    const { error: updateError } = await supabase
+      .from("otp_rate_limits")
+      .update({
+        request_count: rateLimit.request_count + 1,
+        last_request_at: now.toISOString(),
+      })
+      .eq("phone", phone);
+    
+    if (updateError) {
+      console.error("Error updating rate limit:", updateError);
+    }
+  } else {
+    // Window expired - reset counter
+    const { error: resetError } = await supabase
+      .from("otp_rate_limits")
+      .update({
+        request_count: 1,
+        first_request_at: now.toISOString(),
+        last_request_at: now.toISOString(),
+      })
+      .eq("phone", phone);
+    
+    if (resetError) {
+      console.error("Error resetting rate limit:", resetError);
+    }
+  }
+  
+  return { allowed: true };
 }
 
 async function sendTwilioSMS(phoneE164: string, otp: string): Promise<boolean> {
@@ -154,13 +259,6 @@ async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promi
   }
 }
 
-function getSupabaseClient() {
-  return createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
-}
-
 async function handleSendOtp(phone: string, name: string): Promise<Response> {
   if (!phone || !name) {
     return new Response(
@@ -169,18 +267,36 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     );
   }
 
-  const formattedPhone = formatPhone(phone);
-  if (formattedPhone.length !== 10) {
+  // Validate name length
+  const trimmedName = name.trim();
+  if (trimmedName.length < 2 || trimmedName.length > 50) {
     return new Response(
-      JSON.stringify({ error: "Invalid phone number. Please enter a 10-digit Indian mobile number." }),
+      JSON.stringify({ error: "Name must be between 2 and 50 characters" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const formattedPhone = formatPhone(phone);
+  if (formattedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(formattedPhone)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid phone number. Please enter a valid 10-digit Indian mobile number starting with 6-9." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const supabase = getSupabaseClient();
+
+  // Check rate limit before proceeding
+  const rateLimitCheck = await checkRateLimit(supabase, formattedPhone);
+  if (!rateLimitCheck.allowed) {
+    return new Response(
+      JSON.stringify({ error: rateLimitCheck.message }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-
-  const supabase = getSupabaseClient();
 
   // Delete any existing OTPs for this phone
   await supabase
@@ -194,7 +310,7 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     .insert({
       phone: formattedPhone,
       otp,
-      name,
+      name: trimmedName,
       expires_at: expiresAt,
       verified: false,
     });
@@ -233,6 +349,14 @@ async function handleVerifyOtp(phone: string, otp: string): Promise<Response> {
   if (!phone || !otp) {
     return new Response(
       JSON.stringify({ error: "Phone and OTP are required" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Validate OTP format
+  if (!/^\d{6}$/.test(otp)) {
+    return new Response(
+      JSON.stringify({ error: "OTP must be exactly 6 digits" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
