@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Camera, Upload, Loader2 } from "lucide-react";
+import { X, Camera, Upload, Loader2, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,11 +28,19 @@ const WriteReviewModal = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file type
+      const validTypes = ["image/png", "image/jpg", "image/jpeg", "image/webp", "image/gif"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please select a valid image (PNG, JPG, JPEG, WebP, or GIF)");
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
@@ -60,12 +68,14 @@ const WriteReviewModal = ({
 
     try {
       // Upload image to storage
-      const fileExt = selectedImage.name.split(".").pop();
+      const fileExt = selectedImage.name.split(".").pop()?.toLowerCase();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("review-images")
-        .upload(fileName, selectedImage);
+        .upload(fileName, selectedImage, {
+          contentType: selectedImage.type,
+        });
 
       if (uploadError) throw uploadError;
 
@@ -74,12 +84,13 @@ const WriteReviewModal = ({
         .from("review-images")
         .getPublicUrl(fileName);
 
-      // Insert review
+      // Insert review with rating
       const { error: insertError } = await supabase.from("reviews").insert({
-        user_id: crypto.randomUUID(), // Temporary user_id since we don't have proper auth
+        user_id: crypto.randomUUID(),
         user_name: userName,
         review_text: reviewText.trim(),
         image_url: urlData.publicUrl,
+        rating: rating,
       });
 
       if (insertError) throw insertError;
@@ -88,6 +99,7 @@ const WriteReviewModal = ({
       setReviewText("");
       setSelectedImage(null);
       setImagePreview(null);
+      setRating(5);
       onSuccess();
     } catch (error) {
       console.error("Error submitting review:", error);
@@ -102,6 +114,7 @@ const WriteReviewModal = ({
       setReviewText("");
       setSelectedImage(null);
       setImagePreview(null);
+      setRating(5);
       onClose();
     }
   };
@@ -124,12 +137,37 @@ const WriteReviewModal = ({
             <span className="font-medium text-foreground">{userName}</span>
           </div>
 
+          {/* Star Rating */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Your Rating</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-1 transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`w-8 h-8 transition-colors ${
+                      star <= (hoverRating || rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Image Upload */}
           <div>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpg,image/jpeg,image/webp,image/gif"
               capture="environment"
               onChange={handleImageSelect}
               className="hidden"
@@ -162,7 +200,7 @@ const WriteReviewModal = ({
                   <Upload className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  Take or upload a photo
+                  Take or upload a photo (PNG, JPG, JPEG)
                 </span>
               </button>
             )}

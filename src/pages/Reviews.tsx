@@ -6,6 +6,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import ReviewCard from "@/components/reviews/ReviewCard";
 import WriteReviewModal from "@/components/reviews/WriteReviewModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Review {
   id: string;
@@ -13,7 +23,11 @@ interface Review {
   review_text: string;
   image_url: string;
   created_at: string;
+  rating: number;
 }
+
+// Admin phone number - change this to your phone number
+const ADMIN_PHONE = "9999999999";
 
 const Reviews = () => {
   const navigate = useNavigate();
@@ -21,6 +35,10 @@ const Reviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isAdmin = user?.phone === ADMIN_PHONE;
 
   const fetchReviews = async () => {
     try {
@@ -58,6 +76,34 @@ const Reviews = () => {
     toast.success("Review submitted successfully!");
   };
 
+  const handleDeleteReview = async () => {
+    if (!deleteReviewId || !user?.phone) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await supabase.functions.invoke("delete-review", {
+        body: { reviewId: deleteReviewId, adminPhone: user.phone },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast.success("Review deleted successfully");
+      fetchReviews();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete review");
+    } finally {
+      setIsDeleting(false);
+      setDeleteReviewId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -70,6 +116,11 @@ const Reviews = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
+          {isAdmin && (
+            <span className="ml-auto text-xs bg-accent/20 text-accent px-2 py-1 rounded">
+              Admin Mode
+            </span>
+          )}
         </div>
       </header>
 
@@ -98,7 +149,12 @@ const Reviews = () => {
 
             {/* Review Cards */}
             {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewCard
+                key={review.id}
+                review={review}
+                isAdmin={isAdmin}
+                onDelete={(id) => setDeleteReviewId(id)}
+              />
             ))}
           </div>
         )}
@@ -117,6 +173,28 @@ const Reviews = () => {
         onSuccess={handleReviewSubmitted}
         userName={user?.name || ""}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteReviewId} onOpenChange={() => setDeleteReviewId(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Delete Review</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this review? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteReview}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
