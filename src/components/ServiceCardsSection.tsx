@@ -9,14 +9,14 @@ const ServiceCardsSection = () => {
       description: "Women drivers for women passengers. Verified, trained, and committed to your comfort.",
     },
     {
-      icon: Banknote,
-      title: "Consistent Pricing",
-      description: "Market rates with absolute transparency. No surge pricing, ever. What you see is what you pay.",
+      icon: Leaf,
+      title: "100% Women-Driven Fleet",
+      description: "Safety isn't just about the vehicle; it's about who is behind the wheel. While our fleet includes eco-friendly electric and traditional autorickshaws, every single KYRA ride is piloted by a professional female driver for your absolute peace of mind.",
     },
     {
-      icon: Leaf,
-      title: "Eco-Friendly",
-      description: "A fleet of 800+ electric vehicles for a greener Bangalore. Silent, clean, sustainable.",
+      icon: Banknote,
+      title: "Transparent & Fair Pricing",
+      description: "No hidden costs. We follow standard market rates of ₹22.5/km. While we use dynamic pricing during peak hours to ensure a driver is always available for you, we stay committed to being fair and competitive with the local market.",
     },
   ];
 
