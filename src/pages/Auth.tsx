@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-
+import { syncUserToSheets } from "@/lib/google-sheets";
 // Validation schemas
 const nameSchema = z.string().trim().min(2, "Name must be at least 2 characters").max(50, "Name too long");
 const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number");
@@ -96,7 +96,16 @@ const Auth = () => {
       }
 
       // Auto-login/signup successful - login handles both cases
-      login(data.name || name, data.phone || phone);
+      const finalName = data.name || name;
+      const finalPhone = data.phone || phone;
+      
+      login(finalName, finalPhone);
+      
+      // Sync user to Google Sheets
+      syncUserToSheets(finalPhone, finalName).catch(err => 
+        console.error("Failed to sync user to sheets:", err)
+      );
+      
       toast.success("Welcome to KYRA!");
       navigate("/subscribe");
     } catch (error: any) {

@@ -27,6 +27,7 @@ import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
 import { useAuth } from "@/hooks/useAuth";
 import { getFormattedStartDate, isNextWeekBooking, getTimeUntilCutoff } from "@/lib/booking-dates";
 import { useRazorpay } from "@/hooks/useRazorpay";
+import { bookRideToSheets } from "@/lib/google-sheets";
 
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 const MIN_DAYS_REQUIRED = 2;
@@ -54,6 +55,22 @@ export function BookingForm() {
         const message = buildWhatsAppMessage(bookingData, paymentId);
         const whatsappUrl = `${WHATSAPP_LINK}&text=${message}`;
         window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+        
+        // Sync booking to Google Sheets
+        const dayNames = bookingData.selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ");
+        bookRideToSheets(
+          bookingData.name,
+          bookingData.phone,
+          bookingData.pickupAddress,
+          bookingData.dropAddress,
+          `${distanceKm.toFixed(1)} km`,
+          dayNames,
+          bookingData.pickupTime,
+          subscriptionStartDate,
+          fareDetails.perRideFare,
+          fareDetails.totalWeeklyFare,
+          paymentId
+        ).catch(err => console.error("Failed to sync booking to sheets:", err));
       }
       
       toast.success("Payment successful! Booking confirmed.");

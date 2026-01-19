@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { addReviewToSheets } from "@/lib/google-sheets";
 
 interface WriteReviewModalProps {
   isOpen: boolean;
@@ -109,6 +110,11 @@ const WriteReviewModal = ({
       }
 
       console.log("Review inserted:", reviewData);
+
+      // Sync review to Google Sheets
+      addReviewToSheets(userName, reviewText.trim(), urlData.publicUrl, rating).catch(err =>
+        console.error("Failed to sync review to sheets:", err)
+      );
 
       // Reset form
       setReviewText("");
