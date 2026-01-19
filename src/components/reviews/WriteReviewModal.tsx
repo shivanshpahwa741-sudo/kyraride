@@ -71,29 +71,44 @@ const WriteReviewModal = ({
       const fileExt = selectedImage.name.split(".").pop()?.toLowerCase();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("Uploading image:", fileName, "Type:", selectedImage.type, "Size:", selectedImage.size);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("review-images")
         .upload(fileName, selectedImage, {
           contentType: selectedImage.type,
+          upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log("Upload successful:", uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from("review-images")
         .getPublicUrl(fileName);
 
+      console.log("Public URL:", urlData.publicUrl);
+
       // Insert review with rating
-      const { error: insertError } = await supabase.from("reviews").insert({
+      const { data: reviewData, error: insertError } = await supabase.from("reviews").insert({
         user_id: crypto.randomUUID(),
         user_name: userName,
         review_text: reviewText.trim(),
         image_url: urlData.publicUrl,
         rating: rating,
-      });
+      }).select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Review insert error:", insertError);
+        throw new Error(`Insert failed: ${insertError.message}`);
+      }
+
+      console.log("Review inserted:", reviewData);
 
       // Reset form
       setReviewText("");
@@ -101,9 +116,9 @@ const WriteReviewModal = ({
       setImagePreview(null);
       setRating(5);
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting review:", error);
-      toast.error("Failed to submit review. Please try again.");
+      toast.error(error.message || "Failed to submit review. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
