@@ -76,6 +76,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          rating: number
           review_text: string
           user_id: string
           user_name: string
@@ -84,6 +85,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url: string
+          rating?: number
           review_text: string
           user_id: string
           user_name: string
@@ -92,6 +94,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string
+          rating?: number
           review_text?: string
           user_id?: string
           user_name?: string
