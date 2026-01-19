@@ -87,20 +87,37 @@ serve(async (req: Request): Promise<Response> => {
     const phoneDigits = data.phone.replace(/\D/g, "");
     const formattedPhone = phoneDigits.slice(-10);
     
-    // Verify the user exists in profiles (must have completed OTP verification)
-    const { data: profile, error: profileError } = await supabase
+    // Check if the user has verified their OTP (exists in otp_verifications with verified=true)
+    const { data: otpVerification, error: otpError } = await supabase
+      .from("otp_verifications")
+      .select("id, name, phone")
+      .eq("phone", formattedPhone)
+      .eq("verified", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    // Also check profiles table as fallback
+    const { data: profile } = await supabase
       .from("profiles")
       .select("id, name, phone")
       .eq("phone", formattedPhone)
       .maybeSingle();
     
-    if (profileError || !profile) {
-      console.log("Profile not found for phone:", formattedPhone);
+    // User must have either a verified OTP or a profile
+    const verifiedUser = profile || otpVerification;
+    
+    if (!verifiedUser) {
+      console.log("No verified user found for phone:", formattedPhone);
       return new Response(
         JSON.stringify({ error: "Please complete phone verification before submitting a review" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    // Use the verified user's ID and name
+    const userId = verifiedUser.id;
+    const verifiedName = verifiedUser.name || data.userName;
     
     // Rate limiting: check reviews count in last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -108,7 +125,7 @@ serve(async (req: Request): Promise<Response> => {
     const { count: recentReviewsCount, error: countError } = await supabase
       .from("reviews")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", profile.id)
+      .eq("user_id", userId)
       .gte("created_at", oneDayAgo);
     
     if (countError) {
@@ -120,12 +137,12 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
     
-    // Insert the review using the verified profile data
+    // Insert the review using the verified user data
     const { data: review, error: insertError } = await supabase
       .from("reviews")
       .insert({
-        user_id: profile.id, // Use the verified profile ID
-        user_name: profile.name, // Use the verified name from profile
+        user_id: userId,
+        user_name: verifiedName,
         review_text: data.reviewText.trim(),
         image_url: data.imageUrl || "",
         rating: data.rating,
@@ -141,7 +158,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
     
-    console.log(`Review submitted by ${profile.name} (${formattedPhone})`);
+    console.log(`Review submitted by ${verifiedName} (${formattedPhone})`);
     
     return new Response(
       JSON.stringify({ success: true, review }),
