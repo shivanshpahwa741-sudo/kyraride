@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { addReviewToSheets } from "@/lib/google-sheets";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WriteReviewModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const WriteReviewModal = ({
   onSuccess,
   userName,
 }: WriteReviewModalProps) => {
+  const { user } = useAuth();
   const [reviewText, setReviewText] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -59,6 +61,12 @@ const WriteReviewModal = ({
     // Only star rating is required - text and image are optional
     if (rating < 1 || rating > 5) {
       toast.error("Please select a rating");
+      return;
+    }
+
+    // Check if user is verified
+    if (!user?.phone) {
+      toast.error("Please sign in to submit a review");
       return;
     }
 
@@ -97,25 +105,32 @@ const WriteReviewModal = ({
         console.log("Public URL:", imageUrl);
       }
 
-      // Insert review with rating (image_url can be empty)
+      // Submit review through secure edge function
       const reviewTextValue = reviewText.trim() || "";
-      const { data: reviewData, error: insertError } = await supabase.from("reviews").insert({
-        user_id: crypto.randomUUID(),
-        user_name: userName,
-        review_text: reviewTextValue,
-        image_url: imageUrl,
-        rating: rating,
-      }).select();
+      
+      const { data, error } = await supabase.functions.invoke("submit-review", {
+        body: {
+          phone: user.phone,
+          userName: user.name,
+          reviewText: reviewTextValue,
+          imageUrl: imageUrl,
+          rating: rating,
+        },
+      });
 
-      if (insertError) {
-        console.error("Review insert error:", insertError);
-        throw new Error(`Insert failed: ${insertError.message}`);
+      if (error) {
+        console.error("Review submission error:", error);
+        throw new Error(error.message || "Failed to submit review");
       }
 
-      console.log("Review inserted:", reviewData);
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      console.log("Review submitted:", data);
 
       // Sync review to Google Sheets
-      addReviewToSheets(userName, reviewTextValue, imageUrl, rating).catch(err =>
+      addReviewToSheets(user.name, reviewTextValue, imageUrl, rating).catch(err =>
         console.error("Failed to sync review to sheets:", err)
       );
 
@@ -234,14 +249,18 @@ const WriteReviewModal = ({
           {/* Review Text (Optional) */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
-              Your Review <span className="text-muted-foreground font-normal">(optional)</span>
+              Your Review <span className="text-muted-foreground font-normal">(optional, max 500 chars)</span>
             </label>
             <Textarea
               placeholder="Share your experience with KYRA..."
               value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
+              onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
               className="min-h-[100px] resize-none bg-input border-border/50 text-foreground placeholder:text-muted-foreground"
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground mt-1 text-right">
+              {reviewText.length}/500
+            </p>
           </div>
 
           {/* Submit Button - only requires rating */}
