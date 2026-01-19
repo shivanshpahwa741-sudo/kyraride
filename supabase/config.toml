@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sync-profile-to-sheets]
 verify_jwt = false
+
+[functions.razorpay-payment]
+verify_jwt = false
