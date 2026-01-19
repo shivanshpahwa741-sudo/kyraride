@@ -356,30 +356,14 @@ export function BookingConfirmation({
             <CreditCard className="h-4 w-4 text-accent" />
             Payment Summary
           </h3>
-          <div className="space-y-2 pl-6">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <span className="text-muted-foreground">Base Fare</span>
-              <span className="text-foreground text-right">₹{fareDetails.breakdown.baseFare}</span>
-              
-              <span className="text-muted-foreground">Distance Fare ({distanceKm.toFixed(1)} km)</span>
-              <span className="text-foreground text-right">₹{fareDetails.breakdown.distanceFare}</span>
-              
-              <span className="text-muted-foreground">Per Ride</span>
-              <span className="text-foreground text-right font-medium">₹{fareDetails.perRideFare}</span>
-              
-              <span className="text-muted-foreground">Number of Days</span>
-              <span className="text-foreground text-right">{fareDetails.numberOfDays} days/week</span>
+          <div className="pl-6">
+            <div className="flex items-center justify-between">
+              <span className="text-foreground font-semibold">Amount Paid</span>
+              <span className="text-xl font-bold text-accent">₹{fareDetails.totalWeeklyFare}</span>
             </div>
-            
-            <div className="border-t border-border/30 pt-2 mt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-foreground font-semibold">Total Paid</span>
-                <span className="text-xl font-bold text-accent">₹{fareDetails.totalWeeklyFare}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Weekly subscription • {fareDetails.numberOfDays} rides
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Weekly subscription • {fareDetails.numberOfDays} rides
+            </p>
           </div>
         </div>
 
