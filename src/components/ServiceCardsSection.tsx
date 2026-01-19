@@ -6,17 +6,17 @@ const ServiceCardsSection = () => {
     {
       icon: ShieldCheck,
       title: "Safe & Reliable",
-      description: "Women drivers for women passengers. Verified, trained, and committed to your comfort.",
+      description: "Verified women drivers. Trained for your comfort. Book with confidence.",
     },
     {
       icon: Leaf,
       title: "100% Women-Driven Fleet",
-      description: "Safety isn't just about the vehicle; it's about who is behind the wheel. While our fleet includes eco-friendly electric and traditional autorickshaws, every single KYRA ride is piloted by a professional female driver for your absolute peace of mind.",
+      description: "Every ride, a professional female driver. Your safety, guaranteed.",
     },
     {
       icon: Banknote,
       title: "Transparent & Fair Pricing",
-      description: "No hidden costs. We follow standard market rates. While we use dynamic pricing post 10 pm to ensure a driver is always available for you, we stay committed to being fair and competitive with the local market.",
+      description: "No surprises. Market rates. Fair pricing you can trust.",
     },
   ];
 
