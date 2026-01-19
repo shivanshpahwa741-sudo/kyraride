@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, Loader2, MapPinned, Calendar, AlertCircle, CreditCard } from "lucide-react";
+import { Loader2, MapPinned, Calendar, AlertCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,6 +19,7 @@ import { DaySelector } from "./DaySelector";
 import { FareBreakdown } from "./FareBreakdown";
 import { RouteMap } from "./RouteMap";
 import { BookingConfirmation } from "./BookingConfirmation";
+import { TimePicker } from "./TimePicker";
 
 import { bookingSchema, type BookingSchemaType } from "@/schemas/booking-schema";
 import { calculateFare } from "@/lib/fare-calculator";
@@ -409,14 +409,10 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
               <FormItem>
                 <FormLabel>Pickup Time (IST)</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      {...field}
-                      type="time"
-                      className="pl-10 bg-input border-border/50 text-foreground focus:border-accent"
-                    />
-                  </div>
+                  <TimePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
