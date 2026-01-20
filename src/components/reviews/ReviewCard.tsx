@@ -59,15 +59,17 @@ const ReviewCard = ({ review, isAdmin, onDelete }: ReviewCardProps) => {
           </div>
         </div>
 
-        {/* Image */}
-        <div className="w-full">
-          <img
-            src={review.image_url}
-            alt={`Review by ${review.user_name}`}
-            className="w-full h-auto object-cover"
-            loading="lazy"
-          />
-        </div>
+        {/* Image - only show if there's a valid image URL */}
+        {review.image_url && review.image_url.trim() !== "" && (
+          <div className="w-full">
+            <img
+              src={review.image_url}
+              alt=""
+              className="w-full h-auto object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
 
         {/* Review Text */}
         <div className="px-4 py-4">
