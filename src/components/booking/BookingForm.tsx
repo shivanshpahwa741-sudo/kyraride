@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, MapPinned, Calendar, AlertCircle, CreditCard } from "lucide-react";
