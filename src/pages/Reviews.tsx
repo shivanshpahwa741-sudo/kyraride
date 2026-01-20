@@ -159,11 +159,11 @@ const Reviews = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 auto-rows-auto items-start">
             {/* Add Review Card - Always First */}
             <div
               onClick={handleAddReviewClick}
-              className="break-inside-avoid mb-2 sm:mb-3 cursor-pointer group"
+              className="cursor-pointer group"
             >
               <div className="rounded-xl sm:rounded-2xl flex flex-col items-center justify-center py-6 sm:py-8 bg-card/40 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondary/50 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:bg-accent/20 transition-colors">
