@@ -165,11 +165,11 @@ const Reviews = () => {
               onClick={handleAddReviewClick}
               className="break-inside-avoid mb-3 cursor-pointer group"
             >
-              <div className="rounded-xl flex flex-col items-center justify-center py-10 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-card/50">
-                <div className="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center mb-2 group-hover:bg-accent/20 transition-colors">
+              <div className="kyra-card flex flex-col items-center justify-center py-8 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
+                <div className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center mb-2 group-hover:bg-accent/20 transition-colors">
                   <Plus className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                <p className="text-muted-foreground group-hover:text-foreground transition-colors text-sm">
                   Write a Review
                 </p>
               </div>
