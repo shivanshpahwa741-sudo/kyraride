@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { Star, Trash2 } from "lucide-react";
 
 interface ReviewCardProps {
@@ -15,67 +14,60 @@ interface ReviewCardProps {
 }
 
 const ReviewCard = ({ review, isAdmin, onDelete }: ReviewCardProps) => {
-  return (
-    <div className="break-inside-avoid">
-      <div className="kyra-card p-0 overflow-hidden">
-        {/* Header - User Name & Rating */}
-        <div className="px-4 py-3 border-b border-border/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-accent font-semibold text-sm uppercase">
-                  {review.user_name.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">{review.user_name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(review.created_at), "MMM d, yyyy")}
-                </p>
-              </div>
-            </div>
-            {isAdmin && onDelete && (
-              <button
-                onClick={() => onDelete(review.id)}
-                className="p-2 rounded-lg hover:bg-destructive/20 transition-colors"
-                title="Delete review"
-              >
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </button>
-            )}
-          </div>
-          {/* Star Rating */}
-          <div className="flex gap-0.5 mt-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`w-4 h-4 ${
-                  star <= review.rating
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-muted-foreground"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+  const hasImage = review.image_url && review.image_url.trim() !== "";
+  const hasText = review.review_text && review.review_text.trim() !== "";
 
-        {/* Image - only show if there's a valid image URL */}
-        {review.image_url && review.image_url.trim() !== "" && (
-          <div className="w-full">
-            <img
-              src={review.image_url}
-              alt=""
-              className="w-full h-auto object-cover"
-              loading="lazy"
-            />
-          </div>
+  return (
+    <div className="break-inside-avoid mb-3">
+      <div className="rounded-xl overflow-hidden bg-card/50 hover:bg-card/80 transition-colors group relative">
+        {/* Admin Delete Button - Overlay */}
+        {isAdmin && onDelete && (
+          <button
+            onClick={() => onDelete(review.id)}
+            className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-background/80 hover:bg-destructive/90 transition-colors opacity-0 group-hover:opacity-100"
+            title="Delete review"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-destructive group-hover:text-destructive-foreground" />
+          </button>
         )}
 
-        {/* Review Text */}
-        <div className="px-4 py-4">
-          <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
-            {review.review_text}
-          </p>
+        {/* Image - only show if there's a valid image URL */}
+        {hasImage && (
+          <img
+            src={review.image_url}
+            alt=""
+            className="w-full h-auto object-cover"
+            loading="lazy"
+          />
+        )}
+
+        {/* Content Footer */}
+        <div className="p-3">
+          {/* Review Text - only show if exists */}
+          {hasText && (
+            <p className="text-foreground/90 text-xs leading-relaxed mb-2 line-clamp-3">
+              {review.review_text}
+            </p>
+          )}
+
+          {/* Compact Footer: Name & Stars */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground truncate">
+              {review.user_name}
+            </span>
+            <div className="flex gap-0.5 shrink-0">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-3 h-3 ${
+                    star <= review.rating
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground/40"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

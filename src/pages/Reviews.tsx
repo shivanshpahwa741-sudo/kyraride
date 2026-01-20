@@ -159,17 +159,17 @@ const Reviews = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3">
             {/* Add Review Card - Always First */}
             <div
               onClick={handleAddReviewClick}
-              className="break-inside-avoid cursor-pointer group"
+              className="break-inside-avoid mb-3 cursor-pointer group"
             >
-              <div className="kyra-card flex flex-col items-center justify-center min-h-[200px] border-2 border-dashed border-border/50 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
-                <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                  <Plus className="w-8 h-8 text-muted-foreground group-hover:text-accent transition-colors" />
+              <div className="rounded-xl flex flex-col items-center justify-center py-10 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-card/50">
+                <div className="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center mb-2 group-hover:bg-accent/20 transition-colors">
+                  <Plus className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <p className="text-muted-foreground group-hover:text-foreground transition-colors font-medium">
+                <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
                   Write a Review
                 </p>
               </div>
