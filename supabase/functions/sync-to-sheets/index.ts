@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,16 +57,22 @@ async function getAccessToken(): Promise<string> {
     iat: now,
   };
 
-  // Base64URL encode
-  const base64url = (data: object | Uint8Array): string => {
-    const str = typeof data === "object" && !(data instanceof Uint8Array)
-      ? JSON.stringify(data)
-      : new TextDecoder().decode(data);
-    return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  // Base64URL encode helpers
+  const base64urlBytes = (bytes: Uint8Array): string => {
+    // Ensure we always pass a real ArrayBuffer (not SharedArrayBuffer)
+    const ab = bytes.slice().buffer as ArrayBuffer;
+    return encode(ab)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
   };
 
-  const headerB64 = base64url(header);
-  const claimsB64 = base64url(claims);
+  const base64urlJson = (obj: unknown): string => {
+    return base64urlBytes(new TextEncoder().encode(JSON.stringify(obj)));
+  };
+
+  const headerB64 = base64urlJson(header);
+  const claimsB64 = base64urlJson(claims);
   const signatureInput = `${headerB64}.${claimsB64}`;
 
   // Import private key and sign
@@ -73,31 +80,36 @@ async function getAccessToken(): Promise<string> {
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
     .replace(/\n/g, "");
-  
-  const binaryKey = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
-  
+
+  const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
+
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
     binaryKey,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
 
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
     cryptoKey,
-    new TextEncoder().encode(signatureInput)
+    new TextEncoder().encode(signatureInput),
   );
 
-  const signatureB64 = base64url(new Uint8Array(signature));
+  const signatureB64 = base64urlBytes(new Uint8Array(signature));
   const jwt = `${signatureInput}.${signatureB64}`;
 
   // Exchange JWT for access token
+  const tokenBody = new URLSearchParams({
+    grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+    assertion: jwt,
+  });
+
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    body: tokenBody.toString(),
   });
 
   const tokenData = await tokenResponse.json();
