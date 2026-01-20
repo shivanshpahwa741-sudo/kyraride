@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          created_at: string
+          customer_name: string
+          distance_km: number
+          drop_address: string
+          id: string
+          payment_id: string
+          per_ride_fare: number
+          pickup_address: string
+          pickup_time: string
+          selected_days: string[]
+          start_date: string
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+          user_phone: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          distance_km: number
+          drop_address: string
+          id?: string
+          payment_id: string
+          per_ride_fare: number
+          pickup_address: string
+          pickup_time: string
+          selected_days: string[]
+          start_date: string
+          status?: string
+          total_amount: number
+          updated_at?: string
+          user_id: string
+          user_phone: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          distance_km?: number
+          drop_address?: string
+          id?: string
+          payment_id?: string
+          per_ride_fare?: number
+          pickup_address?: string
+          pickup_time?: string
+          selected_days?: string[]
+          start_date?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          user_phone?: string
+        }
+        Relationships: []
+      }
       otp_rate_limits: {
         Row: {
           created_at: string | null
@@ -151,6 +208,33 @@ export type Database = {
           id?: string
           phone?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          session_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          session_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          session_token?: string
           user_id?: string
         }
         Relationships: []
