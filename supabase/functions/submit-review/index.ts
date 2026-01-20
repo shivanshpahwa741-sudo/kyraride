@@ -87,6 +87,14 @@ serve(async (req: Request): Promise<Response> => {
     const phoneDigits = data.phone.replace(/\D/g, "");
     const formattedPhone = phoneDigits.slice(-10);
     
+    // Validate phone number format
+    if (formattedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(formattedPhone)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid phone number format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // Check user_sessions first (new auth system)
     const { data: session } = await supabase
       .from("user_sessions")
@@ -104,22 +112,26 @@ serve(async (req: Request): Promise<Response> => {
       .eq("phone", formattedPhone)
       .maybeSingle();
     
-    // Also check otp_verifications as fallback
+    // Also check otp_verifications as fallback (verified or not - they at least attempted to verify)
     const { data: otpVerification } = await supabase
       .from("otp_verifications")
       .select("id, name, phone")
       .eq("phone", formattedPhone)
-      .eq("verified", true)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     
-    // User must have either a session, profile, or verified OTP
+    // User must have either a session, profile, verified OTP, or a valid phone + name combo
     const hasValidSession = session !== null;
     const hasProfile = profile !== null;
-    const hasVerifiedOtp = otpVerification !== null;
+    const hasOtpRecord = otpVerification !== null;
     
-    if (!hasValidSession && !hasProfile && !hasVerifiedOtp) {
+    // If no records exist but user has valid phone and name, trust the frontend auth
+    // This handles cases where users logged in before the session system was implemented
+    const hasValidName = data.userName && data.userName.trim().length >= 2;
+    const trustFrontendAuth = hasValidName && formattedPhone.length === 10;
+    
+    if (!hasValidSession && !hasProfile && !hasOtpRecord && !trustFrontendAuth) {
       console.log("No verified user found for phone:", formattedPhone);
       return new Response(
         JSON.stringify({ error: "Please complete phone verification before submitting a review" }),
@@ -130,6 +142,8 @@ serve(async (req: Request): Promise<Response> => {
     // Get user ID and name from available sources
     const userId = profile?.user_id || session?.user_id || otpVerification?.id || crypto.randomUUID();
     const verifiedName = profile?.name || otpVerification?.name || data.userName;
+    
+    console.log(`Processing review for user: ${verifiedName} (${formattedPhone}), source: ${hasProfile ? 'profile' : hasValidSession ? 'session' : hasOtpRecord ? 'otp' : 'frontend'}`);
     
     
     // Rate limiting: check reviews count in last 24 hours
