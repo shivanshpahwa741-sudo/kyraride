@@ -4,6 +4,7 @@ import { Plus, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import Masonry from "react-masonry-css";
 import ReviewCard from "@/components/reviews/ReviewCard";
 import WriteReviewModal from "@/components/reviews/WriteReviewModal";
 import {
@@ -159,11 +160,20 @@ const Reviews = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:balance]">
+          <Masonry
+            breakpointCols={{
+              default: 5,
+              1280: 4,
+              1024: 3,
+              640: 2
+            }}
+            className="flex -ml-3 w-auto"
+            columnClassName="pl-3 bg-clip-padding"
+          >
             {/* Add Review Card - Always First */}
             <div
               onClick={handleAddReviewClick}
-              className="break-inside-avoid mb-3 cursor-pointer group"
+              className="mb-3 cursor-pointer group"
             >
               <div className="rounded-xl sm:rounded-2xl flex flex-col items-center justify-center py-8 sm:py-10 bg-card/40 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-2 group-hover:bg-accent/20 transition-colors">
@@ -184,7 +194,7 @@ const Reviews = () => {
                 onDelete={(id) => setDeleteReviewId(id)}
               />
             ))}
-          </div>
+          </Masonry>
         )}
 
         {!isLoading && reviews.length === 0 && (

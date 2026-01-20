@@ -20,7 +20,7 @@ const ReviewCard = ({ review, isAdmin, onDelete }: ReviewCardProps) => {
   const initial = review.user_name.charAt(0).toUpperCase();
 
   return (
-    <div className="break-inside-avoid mb-3">
+    <div className="mb-3">
       <div className="rounded-xl overflow-hidden bg-card/60 border border-border/30 relative">
         {/* Admin Delete Button */}
         {isAdmin && onDelete && (
