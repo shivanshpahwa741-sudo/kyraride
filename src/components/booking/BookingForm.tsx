@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, MapPinned, Calendar, AlertCircle, CreditCard } from "lucide-react";
@@ -34,7 +34,7 @@ const MIN_DAYS_REQUIRED = 2;
 
 export function BookingForm() {
   const { user } = useAuth();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -44,35 +44,74 @@ export function BookingForm() {
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<BookingSchemaType | null>(null);
 
+  // Keep a synchronous snapshot for post-payment callbacks (avoids stale closure values)
+  const bookingSyncRef = useRef<{
+    bookingData: BookingSchemaType;
+    fareDetails: FareDetails;
+    distanceKm: number;
+    subscriptionStartDate: string;
+  } | null>(null);
+
   // Razorpay hook
   const { initiatePayment, isLoading: isPaymentLoading } = useRazorpay({
     onSuccess: (paymentId, orderId) => {
       setPaymentId(paymentId);
       setIsSubmitted(true);
-      
+
+      const snapshot = bookingSyncRef.current;
+      const bd = snapshot?.bookingData ?? bookingData;
+      const fd = snapshot?.fareDetails ?? fareDetails;
+      const dist = snapshot?.distanceKm ?? distanceKm;
+      const startDate = snapshot?.subscriptionStartDate ?? subscriptionStartDate;
+
       // Send WhatsApp message with payment confirmation
-      if (bookingData && fareDetails && distanceKm) {
-        const message = buildWhatsAppMessage(bookingData, paymentId);
-        const whatsappUrl = `${WHATSAPP_LINK}&text=${message}`;
+      if (bd && fd && typeof dist === "number") {
+        const dayNames = bd.selectedDays
+          .map((d) => d.charAt(0).toUpperCase() + d.slice(1))
+          .join(", ");
+
+        const message = `🚗 *KYRA Ride Subscription - PAID & CONFIRMED*
+
+✅ *Payment ID:* ${paymentId || "N/A"}
+
+📋 *Customer Details:*
+Name: ${bd.name}
+Phone: ${bd.phone}
+
+📍 *Route:*
+Pickup: ${bd.pickupAddress}
+Drop: ${bd.dropAddress}
+Distance: ${dist.toFixed(1)} km
+
+⏰ *Schedule:*
+Start Date: ${startDate}
+Pickup Time: ${bd.pickupTime}
+Days: ${dayNames}
+
+💰 *Paid Amount:*
+Per Ride: ₹${fd.perRideFare}
+Weekly Total: ₹${fd.totalWeeklyFare}
+${fd.isSurgePricing ? "(Surge pricing applied)" : ""}`;
+
+        const whatsappUrl = `${WHATSAPP_LINK}&text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-        
+
         // Sync booking to Google Sheets
-        const dayNames = bookingData.selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ");
         bookRideToSheets(
-          bookingData.name,
-          bookingData.phone,
-          bookingData.pickupAddress,
-          bookingData.dropAddress,
-          `${distanceKm.toFixed(1)} km`,
+          bd.name,
+          bd.phone,
+          bd.pickupAddress,
+          bd.dropAddress,
+          `${dist.toFixed(1)} km`,
           dayNames,
-          bookingData.pickupTime,
-          subscriptionStartDate,
-          fareDetails.perRideFare,
-          fareDetails.totalWeeklyFare,
-          paymentId
-        ).catch(err => console.error("Failed to sync booking to sheets:", err));
+          bd.pickupTime,
+          startDate,
+          fd.perRideFare,
+          fd.totalWeeklyFare,
+          paymentId,
+        ).catch((err) => console.error("Failed to sync booking to sheets:", err));
       }
-      
+
       toast.success("Payment successful! Booking confirmed.");
     },
     onError: (error) => {
@@ -232,34 +271,7 @@ export function BookingForm() {
     setValue("dropLng", place.lng);
   };
 
-  // Build WhatsApp message with booking details
-  const buildWhatsAppMessage = (data: BookingSchemaType, paymentIdStr?: string): string => {
-    const dayNames = data.selectedDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(", ");
-    const message = `🚗 *KYRA Ride Subscription - PAID & CONFIRMED*
-
-✅ *Payment ID:* ${paymentIdStr || "N/A"}
-
-📋 *Customer Details:*
-Name: ${data.name}
-Phone: ${data.phone}
-
-📍 *Route:*
-Pickup: ${data.pickupAddress}
-Drop: ${data.dropAddress}
-Distance: ${distanceKm?.toFixed(1)} km
-
-⏰ *Schedule:*
-Start Date: ${subscriptionStartDate}
-Pickup Time: ${data.pickupTime}
-Days: ${dayNames}
-
-💰 *Paid Amount:*
-Per Ride: ₹${fareDetails?.perRideFare}
-Weekly Total: ₹${fareDetails?.totalWeeklyFare}
-${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
-
-    return encodeURIComponent(message);
-  };
+  // WhatsApp message is built after payment success (in Razorpay callback)
 
   // Form submission - initiates payment
   const onSubmit = async (data: BookingSchemaType) => {
@@ -269,6 +281,15 @@ ${fareDetails?.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     }
 
     setIsSubmitting(true);
+
+    // Capture a stable snapshot for the Razorpay callback
+    bookingSyncRef.current = {
+      bookingData: data,
+      fareDetails,
+      distanceKm,
+      subscriptionStartDate,
+    };
+
     setBookingData(data);
 
     try {
