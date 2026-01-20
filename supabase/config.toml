@@ -1,5 +1,8 @@
 project_id = "emtaaofgcqtherqsftbx"
 
+[functions.sync-to-sheets]
+verify_jwt = false
+
 [functions.send-otp]
 verify_jwt = false
 
