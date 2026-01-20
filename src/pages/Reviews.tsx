@@ -159,17 +159,17 @@ const Reviews = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 auto-rows-auto items-start">
+          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:balance]">
             {/* Add Review Card - Always First */}
             <div
               onClick={handleAddReviewClick}
-              className="cursor-pointer group"
+              className="break-inside-avoid mb-3 cursor-pointer group"
             >
-              <div className="rounded-xl sm:rounded-2xl flex flex-col items-center justify-center py-6 sm:py-8 bg-card/40 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondary/50 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:bg-accent/20 transition-colors">
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-accent transition-colors" />
+              <div className="rounded-xl sm:rounded-2xl flex flex-col items-center justify-center py-8 sm:py-10 bg-card/40 border border-dashed border-border/40 hover:border-accent/50 transition-all duration-300 hover:bg-secondary/20">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-2 group-hover:bg-accent/20 transition-colors">
+                  <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <p className="text-muted-foreground group-hover:text-foreground transition-colors text-xs sm:text-sm">
+                <p className="text-muted-foreground group-hover:text-foreground transition-colors text-sm">
                   Write a Review
                 </p>
               </div>
