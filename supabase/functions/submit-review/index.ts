@@ -87,8 +87,25 @@ serve(async (req: Request): Promise<Response> => {
     const phoneDigits = data.phone.replace(/\D/g, "");
     const formattedPhone = phoneDigits.slice(-10);
     
-    // Check if the user has verified their OTP (exists in otp_verifications with verified=true)
-    const { data: otpVerification, error: otpError } = await supabase
+    // Check user_sessions first (new auth system)
+    const { data: session } = await supabase
+      .from("user_sessions")
+      .select("id, user_id, phone")
+      .eq("phone", formattedPhone)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    // Check profiles table
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, user_id, name, phone")
+      .eq("phone", formattedPhone)
+      .maybeSingle();
+    
+    // Also check otp_verifications as fallback
+    const { data: otpVerification } = await supabase
       .from("otp_verifications")
       .select("id, name, phone")
       .eq("phone", formattedPhone)
@@ -97,17 +114,12 @@ serve(async (req: Request): Promise<Response> => {
       .limit(1)
       .maybeSingle();
     
-    // Also check profiles table as fallback
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, name, phone")
-      .eq("phone", formattedPhone)
-      .maybeSingle();
+    // User must have either a session, profile, or verified OTP
+    const hasValidSession = session !== null;
+    const hasProfile = profile !== null;
+    const hasVerifiedOtp = otpVerification !== null;
     
-    // User must have either a verified OTP or a profile
-    const verifiedUser = profile || otpVerification;
-    
-    if (!verifiedUser) {
+    if (!hasValidSession && !hasProfile && !hasVerifiedOtp) {
       console.log("No verified user found for phone:", formattedPhone);
       return new Response(
         JSON.stringify({ error: "Please complete phone verification before submitting a review" }),
@@ -115,9 +127,10 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
     
-    // Use the verified user's ID and name
-    const userId = verifiedUser.id;
-    const verifiedName = verifiedUser.name || data.userName;
+    // Get user ID and name from available sources
+    const userId = profile?.user_id || session?.user_id || otpVerification?.id || crypto.randomUUID();
+    const verifiedName = profile?.name || otpVerification?.name || data.userName;
+    
     
     // Rate limiting: check reviews count in last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
