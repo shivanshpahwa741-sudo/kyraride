@@ -259,19 +259,10 @@ async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promi
   }
 }
 
-async function handleSendOtp(phone: string, name: string): Promise<Response> {
-  if (!phone || !name) {
+async function handleSendOtp(phone: string, name?: string): Promise<Response> {
+  if (!phone) {
     return new Response(
-      JSON.stringify({ error: "Phone and name are required" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  // Validate name length
-  const trimmedName = name.trim();
-  if (trimmedName.length < 2 || trimmedName.length > 50) {
-    return new Response(
-      JSON.stringify({ error: "Name must be between 2 and 50 characters" }),
+      JSON.stringify({ error: "Phone is required" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -285,6 +276,36 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
   }
 
   const supabase = getSupabaseClient();
+
+  // Check if user exists (for login flow when name not provided)
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .eq("phone", formattedPhone)
+    .maybeSingle();
+
+  // Determine the name to use
+  let userNameToStore: string;
+
+  if (name && name.trim().length > 0) {
+    // Signup flow - use provided name
+    const trimmedName = name.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Name must be between 2 and 50 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    userNameToStore = trimmedName;
+  } else if (existingProfile?.name) {
+    // Login flow - use existing profile name
+    userNameToStore = existingProfile.name;
+  } else {
+    return new Response(
+      JSON.stringify({ error: "Name is required for new users" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   // Check rate limit before proceeding
   const rateLimitCheck = await checkRateLimit(supabase, formattedPhone);
@@ -310,7 +331,7 @@ async function handleSendOtp(phone: string, name: string): Promise<Response> {
     .insert({
       phone: formattedPhone,
       otp,
-      name: trimmedName,
+      name: userNameToStore,
       expires_at: expiresAt,
       verified: false,
     });
@@ -485,18 +506,40 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const body: OtpRequest = await req.json();
-    const { action } = body;
+    const body = await req.json();
+    const { action, phone, name, otp } = body;
+
+    if (action === "check") {
+      // Check if user exists (for login flow)
+      if (!phone) {
+        return new Response(
+          JSON.stringify({ error: "Phone is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const formattedPhone = formatPhone(phone);
+      const supabase = getSupabaseClient();
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("phone", formattedPhone)
+        .maybeSingle();
+
+      return new Response(
+        JSON.stringify({ exists: !!profile, name: profile?.name }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (action === "send") {
-      const { phone, name } = body as SendOtpRequest;
       return await handleSendOtp(phone, name);
     } else if (action === "verify") {
-      const { phone, otp } = body as VerifyOtpRequest;
       return await handleVerifyOtp(phone, otp);
     } else {
       return new Response(
-        JSON.stringify({ error: "Invalid action. Use action: 'send' or 'verify'" }),
+        JSON.stringify({ error: "Invalid action. Use action: 'send', 'verify', or 'check'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

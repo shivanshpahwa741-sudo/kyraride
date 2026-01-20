@@ -20,3 +20,12 @@ verify_jwt = false
 
 [functions.check-admin]
 verify_jwt = false
+
+[functions.auth-session]
+verify_jwt = false
+
+[functions.save-booking]
+verify_jwt = false
+
+[functions.get-bookings]
+verify_jwt = false
