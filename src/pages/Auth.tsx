@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { ArrowLeft, User, Phone, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, User, Phone, Loader2, ArrowRight, ShieldCheck, UserPlus, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -12,16 +11,19 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { syncUserToSheets } from "@/lib/google-sheets";
+
 // Validation schemas
 const nameSchema = z.string().trim().min(2, "Name must be at least 2 characters").max(50, "Name too long");
 const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number");
 
+type AuthMode = "signup" | "login";
 type AuthStep = "details" | "otp";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   
+  const [mode, setMode] = useState<AuthMode>("login");
   const [step, setStep] = useState<AuthStep>("details");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -32,9 +34,11 @@ const Auth = () => {
   const validateDetails = (): boolean => {
     const newErrors: { name?: string; phone?: string } = {};
     
-    const nameResult = nameSchema.safeParse(name);
-    if (!nameResult.success) {
-      newErrors.name = nameResult.error.errors[0].message;
+    if (mode === "signup") {
+      const nameResult = nameSchema.safeParse(name);
+      if (!nameResult.success) {
+        newErrors.name = nameResult.error.errors[0].message;
+      }
     }
     
     const phoneResult = phoneSchema.safeParse(phone);
@@ -52,8 +56,21 @@ const Auth = () => {
     setIsLoading(true);
     
     try {
+      // For login, check if user exists first
+      if (mode === "login") {
+        const { data: checkData } = await supabase.functions.invoke("send-otp", {
+          body: { phone, action: "check" },
+        });
+        
+        if (!checkData?.exists) {
+          toast.error("No account found with this number. Please sign up first.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { phone, name, action: "send" },
+        body: { phone, name: mode === "signup" ? name : undefined, action: "send" },
       });
 
       if (error) {
@@ -84,7 +101,7 @@ const Auth = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { phone, otp, action: "verify" },
+        body: { phone, otp, name: mode === "signup" ? name : undefined, action: "verify", isSignup: mode === "signup" },
       });
 
       if (error) {
@@ -95,18 +112,19 @@ const Auth = () => {
         throw new Error((data as any)?.error || "Invalid OTP");
       }
 
-      // Auto-login/signup successful - login handles both cases
+      // Get the verified user data
       const finalName = data.name || name;
       const finalPhone = data.phone || phone;
       
-      login(finalName, finalPhone);
+      // Login using the new session system
+      await login(finalName, finalPhone);
       
       // Sync user to Google Sheets
       syncUserToSheets(finalPhone, finalName).catch(err => 
         console.error("Failed to sync user to sheets:", err)
       );
       
-      toast.success("Welcome to KYRA!");
+      toast.success(mode === "signup" ? "Account created successfully!" : "Welcome back!");
       navigate("/subscribe");
     } catch (error: any) {
       console.error("Verify OTP error:", error);
@@ -121,7 +139,7 @@ const Auth = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { phone, name, action: "send" },
+        body: { phone, name: mode === "signup" ? name : undefined, action: "send" },
       });
 
       if (error) {
@@ -140,6 +158,13 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode(mode === "login" ? "signup" : "login");
+    setStep("details");
+    setOtp("");
+    setErrors({});
   };
 
   return (
@@ -182,36 +207,44 @@ const Auth = () => {
                 {/* Header */}
                 <div className="text-center space-y-2">
                   <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                    <User className="h-8 w-8 text-accent" />
+                    {mode === "signup" ? (
+                      <UserPlus className="h-8 w-8 text-accent" />
+                    ) : (
+                      <LogIn className="h-8 w-8 text-accent" />
+                    )}
                   </div>
                   <h1 className="font-display text-2xl font-bold text-foreground">
-                    Sign In to KYRA
+                    {mode === "signup" ? "Create Account" : "Welcome Back"}
                   </h1>
                   <p className="text-muted-foreground">
-                    Enter your details to continue
+                    {mode === "signup" 
+                      ? "Enter your details to get started" 
+                      : "Enter your phone number to continue"}
                   </p>
                 </div>
 
                 {/* Form */}
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="pl-10 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent"
-                      />
+                  {mode === "signup" && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="pl-10 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-accent"
+                        />
+                      </div>
+                      {errors.name && (
+                        <p className="text-sm text-destructive">{errors.name}</p>
+                      )}
                     </div>
-                    {errors.name && (
-                      <p className="text-sm text-destructive">{errors.name}</p>
-                    )}
-                  </div>
+                  )}
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
@@ -259,6 +292,33 @@ const Auth = () => {
                 <p className="text-xs text-center text-muted-foreground">
                   We'll send a verification code to your phone
                 </p>
+
+                {/* Switch Mode */}
+                <div className="pt-4 border-t border-border/30">
+                  <p className="text-center text-sm text-muted-foreground">
+                    {mode === "signup" ? (
+                      <>
+                        Already have an account?{" "}
+                        <button
+                          onClick={switchMode}
+                          className="text-accent hover:underline font-medium"
+                        >
+                          Log in
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        New to KYRA?{" "}
+                        <button
+                          onClick={switchMode}
+                          className="text-accent hover:underline font-medium"
+                        >
+                          Sign up
+                        </button>
+                      </>
+                    )}
+                  </p>
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -314,7 +374,7 @@ const Auth = () => {
                         Verifying...
                       </>
                     ) : (
-                      "Verify & Continue"
+                      mode === "signup" ? "Create Account" : "Log In"
                     )}
                   </Button>
 

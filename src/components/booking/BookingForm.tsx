@@ -96,6 +96,23 @@ ${fd.isSurgePricing ? "(Surge pricing applied)" : ""}`;
         const whatsappUrl = `${WHATSAPP_LINK}&text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 
+        // Save booking to database
+        supabase.functions.invoke("save-booking", {
+          body: {
+            customerName: bd.name,
+            phone: bd.phone,
+            pickupAddress: bd.pickupAddress,
+            dropAddress: bd.dropAddress,
+            distanceKm: dist,
+            selectedDays: bd.selectedDays,
+            pickupTime: bd.pickupTime,
+            startDate,
+            perRideFare: fd.perRideFare,
+            totalAmount: fd.totalWeeklyFare,
+            paymentId,
+          },
+        }).catch((err) => console.error("Failed to save booking:", err));
+
         // Sync booking to Google Sheets
         bookRideToSheets(
           bd.name,
