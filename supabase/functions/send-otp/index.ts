@@ -21,9 +21,9 @@ interface VerifyOtpRequest {
 type OtpRequest = SendOtpRequest | VerifyOtpRequest;
 
 // Rate limiting constants
-const MAX_OTP_REQUESTS_PER_PHONE = 3; // Max 3 OTP requests per phone
+const MAX_OTP_REQUESTS_PER_PHONE = 5; // Max 5 OTP requests per phone
 const RATE_LIMIT_WINDOW_MINUTES = 15; // Within 15 minutes
-const COOLDOWN_SECONDS = 60; // Minimum 60 seconds between requests
+const COOLDOWN_SECONDS = 30; // Minimum 30 seconds between requests
 
 // Generate a 6-digit OTP
 function generateOTP(): string {

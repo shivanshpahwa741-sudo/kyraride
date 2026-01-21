@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, User, Phone, Loader2, ArrowRight, ShieldCheck, UserPlus, LogIn } from "lucide-react";
@@ -19,6 +19,8 @@ const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Ind
 type AuthMode = "signup" | "login";
 type AuthStep = "details" | "otp";
 
+const RESEND_COOLDOWN = 30; // 30 seconds cooldown
+
 const Auth = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -29,7 +31,19 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const validateDetails = (): boolean => {
     const newErrors: { name?: string; phone?: string } = {};
@@ -53,18 +67,23 @@ const Auth = () => {
   const handleSendOtp = async () => {
     if (!validateDetails()) return;
     
-    setIsLoading(true);
+    setIsSendingOtp(true);
     
     try {
       // For login, check if user exists first
       if (mode === "login") {
-        const { data: checkData } = await supabase.functions.invoke("send-otp", {
+        const { data: checkData, error: checkError } = await supabase.functions.invoke("send-otp", {
           body: { phone, action: "check" },
         });
         
+        if (checkError) {
+          console.error("Check user error:", checkError);
+          throw new Error("Failed to check account. Please try again.");
+        }
+        
         if (!checkData?.exists) {
           toast.error("No account found with this number. Please sign up first.");
-          setIsLoading(false);
+          setIsSendingOtp(false);
           return;
         }
       }
@@ -74,20 +93,22 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error((data as any)?.error || error.message || "Failed to send OTP");
+        const errorMsg = data?.error || "Failed to send OTP. Please try again.";
+        throw new Error(errorMsg);
       }
 
       if (!data?.success) {
-        throw new Error((data as any)?.error || "Failed to send OTP");
+        throw new Error(data?.error || "Failed to send OTP");
       }
 
       toast.success("OTP sent to your phone!");
       setStep("otp");
+      setResendCooldown(RESEND_COOLDOWN);
     } catch (error: any) {
       console.error("Send OTP error:", error);
       toast.error(error.message || "Failed to send OTP. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -97,7 +118,7 @@ const Auth = () => {
       return;
     }
     
-    setIsLoading(true);
+    setIsVerifying(true);
     
     try {
       const { data, error } = await supabase.functions.invoke("send-otp", {
@@ -105,11 +126,12 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error((data as any)?.error || error.message || "Verification failed");
+        const errorMsg = data?.error || "Verification failed. Please try again.";
+        throw new Error(errorMsg);
       }
 
       if (!data?.success) {
-        throw new Error((data as any)?.error || "Invalid OTP");
+        throw new Error(data?.error || "Invalid OTP");
       }
 
       // Get the verified user data
@@ -130,11 +152,13 @@ const Auth = () => {
       console.error("Verify OTP error:", error);
       toast.error(error.message || "Invalid OTP. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsVerifying(false);
     }
   };
 
-  const handleResendOtp = async () => {
+  const handleResendOtp = useCallback(async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    
     setIsLoading(true);
     
     try {
@@ -143,22 +167,24 @@ const Auth = () => {
       });
 
       if (error) {
-        throw new Error((data as any)?.error || error.message || "Failed to resend OTP");
+        const errorMsg = data?.error || "Failed to resend OTP. Please try again.";
+        throw new Error(errorMsg);
       }
 
       if (!data?.success) {
-        throw new Error((data as any)?.error || "Failed to resend OTP");
+        throw new Error(data?.error || "Failed to resend OTP");
       }
 
       toast.success("OTP resent successfully!");
       setOtp("");
+      setResendCooldown(RESEND_COOLDOWN);
     } catch (error: any) {
       console.error("Resend OTP error:", error);
       toast.error(error.message || "Failed to resend OTP");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [phone, name, mode, resendCooldown, isLoading]);
 
   const switchMode = () => {
     setMode(mode === "login" ? "signup" : "login");
@@ -273,10 +299,10 @@ const Auth = () => {
                 {/* Submit */}
                 <Button
                   onClick={handleSendOtp}
-                  disabled={isLoading}
+                  disabled={isSendingOtp}
                   className="w-full kyra-btn-primary py-6 text-lg"
                 >
-                  {isLoading ? (
+                  {isSendingOtp ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Sending OTP...
@@ -365,10 +391,10 @@ const Auth = () => {
                 <div className="space-y-3">
                   <Button
                     onClick={handleVerifyOtp}
-                    disabled={isLoading || otp.length !== 6}
+                    disabled={isVerifying || otp.length !== 6}
                     className="w-full kyra-btn-primary py-6 text-lg"
                   >
-                    {isLoading ? (
+                    {isVerifying ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Verifying...
@@ -384,7 +410,9 @@ const Auth = () => {
                       onClick={() => {
                         setStep("details");
                         setOtp("");
+                        setResendCooldown(0);
                       }}
+                      disabled={isSendingOtp || isVerifying}
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
@@ -394,10 +422,16 @@ const Auth = () => {
                     <Button
                       variant="ghost"
                       onClick={handleResendOtp}
-                      disabled={isLoading}
-                      className="text-accent hover:text-accent/80"
+                      disabled={isLoading || resendCooldown > 0}
+                      className="text-accent hover:text-accent/80 disabled:text-muted-foreground"
                     >
-                      Resend OTP
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : resendCooldown > 0 ? (
+                        `Resend in ${resendCooldown}s`
+                      ) : (
+                        "Resend OTP"
+                      )}
                     </Button>
                   </div>
                 </div>
