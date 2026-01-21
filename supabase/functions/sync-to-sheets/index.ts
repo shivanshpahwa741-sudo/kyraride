@@ -217,9 +217,13 @@ serve(async (req: Request): Promise<Response> => {
       // Ensure Bookings sheet exists
       await ensureSheetExists(accessToken, "Bookings", [
         "Timestamp", "Payment ID", "Customer Name", "Phone", 
-        "Pickup", "Drop", "Distance", "Days", "Pickup Time", 
+        "Pickup", "Drop", "Distance", "Days", "Number of Days", "Pickup Time", 
         "Start Date", "Per Ride Fare", "Total Amount"
       ]);
+
+      // Calculate number of days from the days string (comma-separated)
+      const daysArray = bookingPayload.days.split(",").map(d => d.trim()).filter(d => d.length > 0);
+      const numberOfDays = daysArray.length;
 
       // Append booking data
       await appendToSheet(accessToken, "Bookings", [[
@@ -231,6 +235,7 @@ serve(async (req: Request): Promise<Response> => {
         bookingPayload.drop,
         bookingPayload.distance,
         bookingPayload.days,
+        String(numberOfDays),
         bookingPayload.pickupTime,
         bookingPayload.startDate,
         String(bookingPayload.perRideFare),
