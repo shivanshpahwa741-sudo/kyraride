@@ -344,14 +344,16 @@ async function handleSendOtp(phone: string, name?: string): Promise<Response> {
     );
   }
 
-  // Send SMS - try Fast2SMS first (cheaper), fallback to Twilio
-  console.log("Attempting to send OTP via Fast2SMS...");
-  let result = await sendFast2SMS(formattedPhone, otp);
+  // Send SMS - try Twilio first (more reliable), fallback to Fast2SMS
+  const phoneE164 = toE164India(formattedPhone);
+  console.log("Attempting to send OTP via Twilio to", phoneE164);
+  let result = await sendTwilioSMS(phoneE164, otp);
+  let provider = "Twilio";
 
   if (!result.success) {
-    console.log("Fast2SMS failed, trying Twilio...", result.error);
-    const phoneE164 = toE164India(formattedPhone);
-    result = await sendTwilioSMS(phoneE164, otp);
+    console.log("Twilio failed, trying Fast2SMS...", result.error);
+    result = await sendFast2SMS(formattedPhone, otp);
+    provider = "Fast2SMS";
   }
 
   if (!result.success) {
@@ -363,6 +365,8 @@ async function handleSendOtp(phone: string, name?: string): Promise<Response> {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  console.log(`OTP ${otp} sent successfully via ${provider} to ${formattedPhone}`);
 
   console.log(`OTP sent to ${formattedPhone}`);
 
