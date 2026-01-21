@@ -10,7 +10,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
 const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
+const twilioWhatsAppSandbox = "+14155238886"; // Twilio WhatsApp Sandbox number
 const opsPhone = "+919686638787"; // Ops team WhatsApp number
 
 interface BookingData {
@@ -60,7 +60,7 @@ async function sendWhatsAppNotification(message: string): Promise<void> {
   const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   
   const body = new URLSearchParams({
-    From: `whatsapp:${twilioPhoneNumber}`,
+    From: `whatsapp:${twilioWhatsAppSandbox}`,
     To: `whatsapp:${opsPhone}`,
     Body: message,
   });
