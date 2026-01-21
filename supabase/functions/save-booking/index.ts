@@ -8,6 +8,10 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
+const adminPhone = Deno.env.get("ADMIN_PHONE")!;
 
 interface BookingData {
   customerName: string;
@@ -21,6 +25,97 @@ interface BookingData {
   perRideFare: number;
   totalAmount: number;
   paymentId: string;
+}
+
+// Format days for display
+function formatDaysOfTravel(days: string[]): string {
+  if (days.length === 0) return "None";
+  if (days.length === 1) return days[0];
+  if (days.length === 6) return "Monday-Saturday";
+  if (days.length === 7) return "Monday-Sunday";
+  return days.join(", ");
+}
+
+// Format date for display (e.g., "19th January")
+function formatStartDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleString('en-IN', { month: 'long' });
+  
+  const suffix = (d: number) => {
+    if (d > 3 && d < 21) return 'th';
+    switch (d % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+  
+  return `${day}${suffix(day)} ${month}`;
+}
+
+// Send WhatsApp message via Twilio
+async function sendWhatsAppNotification(message: string): Promise<void> {
+  const formattedAdminPhone = adminPhone.startsWith('+') ? adminPhone : `+91${adminPhone}`;
+  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+  
+  const body = new URLSearchParams({
+    From: `whatsapp:${twilioPhoneNumber}`,
+    To: `whatsapp:${formattedAdminPhone}`,
+    Body: message,
+  });
+
+  const response = await fetch(twilioUrl, {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Twilio WhatsApp error:", errorText);
+    throw new Error(`Failed to send WhatsApp: ${response.status}`);
+  }
+  
+  console.log("WhatsApp notification sent successfully to admin");
+}
+
+// Build admin notification message
+function buildAdminMessage(rideNumber: number, data: BookingData): string {
+  const daysCount = data.selectedDays.length;
+  const subscriptionType = `Weekly (${daysCount} day${daysCount > 1 ? 's' : ''})`;
+  
+  return `RIDE #${rideNumber}
+
+${data.customerName}
+
+${data.phone}
+
+📍 Pickup location: ${data.pickupAddress}
+
+📍 Drop location: ${data.dropAddress}
+
+📅 Days of travel: ${formatDaysOfTravel(data.selectedDays)}
+
+🗓 Start date: ${formatStartDate(data.startDate)}
+
+⏰ Pickup time: ${data.pickupTime}
+
+📆 Subscription type: ${subscriptionType}
+
+📏 Distance: ${data.distanceKm}km
+
+💰 Fare per day: ₹${data.perRideFare}
+
+📆 Number of rides (this week): ${daysCount}
+
+💳 Total amount for the week: 
+
+₹${data.totalAmount}`;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -99,6 +194,30 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     console.log(`Booking saved: ${booking.id} for ${customerName} (${formattedPhone})`);
+
+    // Get total booking count for ride number
+    const { count } = await supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true });
+    
+    const rideNumber = count || 1;
+
+    // Send WhatsApp notification to admin in background
+    const notificationTask = async () => {
+      try {
+        const message = buildAdminMessage(rideNumber, {
+          ...data,
+          customerName,
+          phone: formattedPhone,
+        });
+        await sendWhatsAppNotification(message);
+      } catch (err) {
+        console.error("Failed to send admin WhatsApp notification:", err);
+      }
+    };
+
+    // Fire and forget - don't block the response
+    notificationTask();
 
     return new Response(
       JSON.stringify({ success: true, bookingId: booking.id }),
