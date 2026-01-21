@@ -149,6 +149,52 @@ async function checkRateLimit(supabase: ReturnType<typeof getSupabaseClient>, ph
   return { allowed: true };
 }
 
+async function sendFast2SMS(phone: string, otp: string): Promise<{ success: boolean; error?: string }> {
+  const apiKey = Deno.env.get("FAST2SMS_API_KEY");
+
+  if (!apiKey) {
+    console.error("Fast2SMS API key missing");
+    return { success: false, error: "Fast2SMS not configured" };
+  }
+
+  console.log(`Sending SMS via Fast2SMS to ${phone}`);
+
+  try {
+    const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+      method: "POST",
+      headers: {
+        "authorization": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        route: "otp",
+        variables_values: otp,
+        numbers: phone,
+      }),
+    });
+
+    const responseText = await response.text();
+    console.log("Fast2SMS response:", responseText);
+
+    try {
+      const data = JSON.parse(responseText);
+      if (data.return === true) {
+        console.log("Fast2SMS sent successfully");
+        return { success: true };
+      } else {
+        console.error("Fast2SMS error:", data.message);
+        return { success: false, error: data.message || "Fast2SMS failed" };
+      }
+    } catch {
+      console.error("Failed to parse Fast2SMS response:", responseText);
+      return { success: false, error: "Invalid Fast2SMS response" };
+    }
+  } catch (error) {
+    console.error("Fast2SMS exception:", error);
+    return { success: false, error: "Network error sending SMS" };
+  }
+}
+
 async function sendTwilioSMS(phoneE164: string, otp: string): Promise<{ success: boolean; error?: string }> {
   const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -189,28 +235,21 @@ async function sendTwilioSMS(phoneE164: string, otp: string): Promise<{ success:
     if (!response.ok) {
       console.error("Twilio error response:", response.status, responseText);
       
-      // Parse Twilio error for user-friendly message
       try {
         const errorData = JSON.parse(responseText);
         if (errorData.code === 21608) {
           return { 
             success: false, 
-            error: "Twilio trial account: This phone number is not verified. Please upgrade your Twilio account or verify this number at twilio.com/console" 
+            error: "Twilio trial: number not verified" 
           };
         }
-        if (errorData.code === 21211) {
-          return { success: false, error: "Invalid phone number format" };
-        }
-        if (errorData.code === 21614) {
-          return { success: false, error: "This phone number cannot receive SMS" };
-        }
-        return { success: false, error: errorData.message || "Failed to send SMS" };
+        return { success: false, error: errorData.message || "Twilio failed" };
       } catch {
         return { success: false, error: `Twilio error: ${response.status}` };
       }
     }
 
-    console.log("Twilio SMS sent successfully:", responseText);
+    console.log("Twilio SMS sent successfully");
     return { success: true };
   } catch (error) {
     console.error("Twilio send exception:", error);
@@ -303,12 +342,18 @@ async function handleSendOtp(phone: string, name?: string): Promise<Response> {
     );
   }
 
-  // Send SMS via Twilio
-  const phoneE164 = toE164India(formattedPhone);
-  const result = await sendTwilioSMS(phoneE164, otp);
+  // Send SMS - try Fast2SMS first (cheaper), fallback to Twilio
+  console.log("Attempting to send OTP via Fast2SMS...");
+  let result = await sendFast2SMS(formattedPhone, otp);
 
   if (!result.success) {
-    console.error("Failed to send OTP:", result.error);
+    console.log("Fast2SMS failed, trying Twilio...", result.error);
+    const phoneE164 = toE164India(formattedPhone);
+    result = await sendTwilioSMS(phoneE164, otp);
+  }
+
+  if (!result.success) {
+    console.error("All SMS providers failed:", result.error);
     return new Response(
       JSON.stringify({
         error: result.error || "Failed to send OTP. Please try again.",
