@@ -31,7 +31,7 @@ const SubscriptionSection = () => {
             {
               icon: TrendingUp,
               title: "Fixed-Rate Certainty",
-              description: "Pay just ₹22.5/km always. Rain or shine, peak hours or holidays.",
+              description: "We charge consistently, every single time. No more comparing prices across 3 different apps.",
             },
             {
               icon: Shield,
