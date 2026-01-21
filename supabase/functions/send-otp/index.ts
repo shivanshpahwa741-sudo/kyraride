@@ -149,14 +149,21 @@ async function checkRateLimit(supabase: ReturnType<typeof getSupabaseClient>, ph
   return { allowed: true };
 }
 
-async function sendTwilioSMS(phoneE164: string, otp: string): Promise<boolean> {
+async function sendTwilioSMS(phoneE164: string, otp: string): Promise<{ success: boolean; error?: string }> {
   const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
   const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
 
   if (!accountSid || !authToken || !fromNumber) {
-    return false;
+    console.error("Twilio credentials missing:", { 
+      hasAccountSid: !!accountSid, 
+      hasAuthToken: !!authToken, 
+      hasFromNumber: !!fromNumber 
+    });
+    return { success: false, error: "Twilio credentials not configured" };
   }
+
+  console.log(`Sending SMS via Twilio to ${phoneE164} from ${fromNumber}`);
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const body = new URLSearchParams({
@@ -177,85 +184,37 @@ async function sendTwilioSMS(phoneE164: string, otp: string): Promise<boolean> {
       body,
     });
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      console.error("Twilio send error:", response.status, text);
-      return false;
+      console.error("Twilio error response:", response.status, responseText);
+      
+      // Parse Twilio error for user-friendly message
+      try {
+        const errorData = JSON.parse(responseText);
+        if (errorData.code === 21608) {
+          return { 
+            success: false, 
+            error: "Twilio trial account: This phone number is not verified. Please upgrade your Twilio account or verify this number at twilio.com/console" 
+          };
+        }
+        if (errorData.code === 21211) {
+          return { success: false, error: "Invalid phone number format" };
+        }
+        if (errorData.code === 21614) {
+          return { success: false, error: "This phone number cannot receive SMS" };
+        }
+        return { success: false, error: errorData.message || "Failed to send SMS" };
+      } catch {
+        return { success: false, error: `Twilio error: ${response.status}` };
+      }
     }
 
-    return true;
+    console.log("Twilio SMS sent successfully:", responseText);
+    return { success: true };
   } catch (error) {
     console.error("Twilio send exception:", error);
-    return false;
-  }
-}
-
-async function sendFast2SMS(phone: string, otp: string): Promise<boolean> {
-  const apiKey = Deno.env.get("FAST2SMS_API_KEY");
-
-  if (!apiKey) {
-    return false;
-  }
-
-  const url = "https://www.fast2sms.com/dev/bulkV2";
-  const message = `Your KYRA verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`;
-
-  try {
-    // Using Quick Transactional route (route: "q") which doesn't require OTP verification
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        authorization: apiKey,
-        "Content-Type": "application/json",
-        Accept: "*/*",
-        "Cache-Control": "no-cache",
-      },
-      body: JSON.stringify({
-        route: "q", // Quick transactional
-        message,
-        language: "english",
-        flash: 0,
-        numbers: phone,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || result.return === false) {
-      console.error("Fast2SMS error:", result);
-      console.log("Trying Fast2SMS v3 API...");
-      return await sendFast2SMSV3(phone, otp, apiKey);
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Fast2SMS send exception:", error);
-    return false;
-  }
-}
-
-async function sendFast2SMSV3(phone: string, otp: string, apiKey: string): Promise<boolean> {
-  const message = `Your KYRA verification code is ${otp}. Valid for 5 minutes.`;
-
-  try {
-    const response = await fetch(
-      `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=v3&sender_id=TXTIND&message=${encodeURIComponent(message)}&language=english&numbers=${phone}`,
-      {
-        method: "GET",
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || result.return === false) {
-      console.error("Fast2SMS v3 error:", result);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Fast2SMS v3 send exception:", error);
-    return false;
+    return { success: false, error: "Network error sending SMS" };
   }
 }
 
@@ -344,15 +303,15 @@ async function handleSendOtp(phone: string, name?: string): Promise<Response> {
     );
   }
 
-  // Send SMS (prefer Twilio if configured; fallback to Fast2SMS)
+  // Send SMS via Twilio
   const phoneE164 = toE164India(formattedPhone);
-  const sent = (await sendTwilioSMS(phoneE164, otp)) || (await sendFast2SMS(formattedPhone, otp));
+  const result = await sendTwilioSMS(phoneE164, otp);
 
-  if (!sent) {
+  if (!result.success) {
+    console.error("Failed to send OTP:", result.error);
     return new Response(
       JSON.stringify({
-        error:
-          "Failed to send OTP. Please verify your SMS provider setup (Twilio/others) and try again.",
+        error: result.error || "Failed to send OTP. Please try again.",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
