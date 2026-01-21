@@ -27,20 +27,40 @@ interface BookingData {
   paymentId: string;
 }
 
-// Format days for display
+// Format days for display with proper capitalization
 function formatDaysOfTravel(days: string[]): string {
   if (days.length === 0) return "None";
-  if (days.length === 1) return days[0];
+  
+  // Capitalize each day
+  const capitalizedDays = days.map(d => d.charAt(0).toUpperCase() + d.slice(1).toLowerCase());
+  
+  if (days.length === 1) return capitalizedDays[0];
   if (days.length === 6) return "Monday-Saturday";
   if (days.length === 7) return "Monday-Sunday";
-  return days.join(", ");
+  return capitalizedDays.join(", ");
 }
 
 // Format date for display (e.g., "19th January")
 function formatStartDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  if (!dateStr) return "Date not set";
+  
+  // Log for debugging
+  console.log("Parsing date string:", dateStr);
+  
+  // Handle various date formats
+  let date: Date;
+  
+  // Try parsing as ISO format first
+  date = new Date(dateStr);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    console.error("Invalid date string:", dateStr);
+    return "Date pending";
+  }
+  
   const day = date.getDate();
-  const month = date.toLocaleString('en-IN', { month: 'long' });
+  const month = date.toLocaleString('en-US', { month: 'long' });
   
   const suffix = (d: number) => {
     if (d > 3 && d < 21) return 'th';
@@ -53,6 +73,32 @@ function formatStartDate(dateStr: string): string {
   };
   
   return `${day}${suffix(day)} ${month}`;
+}
+
+// Convert address to Google Maps link
+function toGoogleMapsLink(address: string): string {
+  const encoded = encodeURIComponent(address);
+  return `https://maps.google.com/?q=${encoded}`;
+}
+
+// Format time to 12-hour format with AM/PM
+function formatTime(timeStr: string): string {
+  if (!timeStr) return "Time not set";
+  
+  // Parse time string (expected format: "HH:MM" or "H:MM")
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return timeStr;
+  
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  
+  if (isNaN(hours)) return timeStr;
+  
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // Convert 0 to 12
+  
+  return `${hours}:${minutes} ${ampm}`;
 }
 
 // Send WhatsApp message via Twilio
@@ -94,15 +140,15 @@ ${data.customerName}
 
 ${data.phone}
 
-📍 Pickup location: ${data.pickupAddress}
+📍 Pickup location: ${toGoogleMapsLink(data.pickupAddress)}
 
-📍 Drop location: ${data.dropAddress}
+📍 Drop location: ${toGoogleMapsLink(data.dropAddress)}
 
 📅 Days of travel: ${formatDaysOfTravel(data.selectedDays)}
 
 🗓 Start date: ${formatStartDate(data.startDate)}
 
-⏰ Pickup time: ${data.pickupTime}
+⏰ Pickup time: ${formatTime(data.pickupTime)}
 
 📆 Subscription type: ${subscriptionType}
 
@@ -112,9 +158,7 @@ ${data.phone}
 
 📆 Number of rides (this week): ${daysCount}
 
-💳 Total amount for the week: 
-
-₹${data.totalAmount}`;
+💳 Total amount for the week: ₹${data.totalAmount}`;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -125,6 +169,9 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const data: BookingData = await req.json();
+
+    // Log incoming data for debugging
+    console.log("Received booking data:", JSON.stringify(data));
 
     // Validate required fields
     if (!data.phone || !data.paymentId || !data.pickupAddress || !data.dropAddress) {
