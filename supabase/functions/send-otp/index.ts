@@ -157,9 +157,10 @@ async function sendFast2SMS(phone: string, otp: string): Promise<{ success: bool
     return { success: false, error: "Fast2SMS not configured" };
   }
 
-  console.log(`Sending SMS via Fast2SMS to ${phone}`);
+  console.log(`Sending SMS via Fast2SMS Quick route to ${phone}`);
 
   try {
+    // Use Quick route (route=q) - works without DLT verification
     const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
       method: "POST",
       headers: {
@@ -167,8 +168,9 @@ async function sendFast2SMS(phone: string, otp: string): Promise<{ success: bool
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        route: "otp",
-        variables_values: otp,
+        route: "q",
+        message: `Your KYRA verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`,
+        flash: 0,
         numbers: phone,
       }),
     });
