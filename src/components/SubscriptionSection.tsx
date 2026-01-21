@@ -31,7 +31,7 @@ const SubscriptionSection = () => {
             {
               icon: TrendingUp,
               title: "Fixed-Rate Certainty",
-              description: "We charge consistently, every single time. No more comparing prices across 3 different apps.",
+              description: "We charge consistently, always. No more juggling 3 different apps.",
             },
             {
               icon: Shield,
