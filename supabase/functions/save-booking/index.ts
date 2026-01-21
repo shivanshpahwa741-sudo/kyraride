@@ -17,7 +17,11 @@ interface BookingData {
   customerName: string;
   phone: string;
   pickupAddress: string;
+  pickupLat?: number;
+  pickupLng?: number;
   dropAddress: string;
+  dropLat?: number;
+  dropLng?: number;
   distanceKm: number;
   selectedDays: string[];
   pickupTime: string;
@@ -41,44 +45,34 @@ function formatDaysOfTravel(days: string[]): string {
 }
 
 // Format date for display (e.g., "19th January")
+// The frontend sends a pre-formatted string like "Monday, January 26th, 2026"
 function formatStartDate(dateStr: string): string {
   if (!dateStr) return "Date not set";
   
-  // Log for debugging
   console.log("Parsing date string:", dateStr);
   
-  // Handle various date formats
-  let date: Date;
-  
-  // Try parsing as ISO format first
-  date = new Date(dateStr);
-  
-  // Check if date is valid
-  if (isNaN(date.getTime())) {
-    console.error("Invalid date string:", dateStr);
-    return "Date pending";
+  // The frontend sends a pre-formatted string like "Monday, January 26th, 2026"
+  // Extract just the date portion (remove day name and year)
+  const parts = dateStr.split(', ');
+  if (parts.length >= 2) {
+    // "Monday, January 26th, 2026" → "January 26th"
+    const datePart = parts.slice(1).join(', ');
+    // Remove the year if present (e.g., ", 2026" at the end)
+    return datePart.replace(/, \d{4}$/, '');
   }
   
-  const day = date.getDate();
-  const month = date.toLocaleString('en-US', { month: 'long' });
-  
-  const suffix = (d: number) => {
-    if (d > 3 && d < 21) return 'th';
-    switch (d % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
-    }
-  };
-  
-  return `${day}${suffix(day)} ${month}`;
+  // If it's already in a simple format, return as-is
+  return dateStr;
 }
 
-// Convert address to Google Maps link
-function toGoogleMapsLink(address: string): string {
-  const encoded = encodeURIComponent(address);
-  return `https://maps.google.com/?q=${encoded}`;
+// Convert address to Google Maps link with direct pin using coordinates
+function toGoogleMapsLink(address: string, lat?: number, lng?: number): string {
+  if (lat && lng) {
+    // Direct pin using coordinates - same UX as maps.app.goo.gl links
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  }
+  // Fallback to address search
+  return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
 }
 
 // Format time to 12-hour format with AM/PM
@@ -140,9 +134,9 @@ ${data.customerName}
 
 ${data.phone}
 
-📍 Pickup location: ${toGoogleMapsLink(data.pickupAddress)}
+📍 Pickup location: ${toGoogleMapsLink(data.pickupAddress, data.pickupLat, data.pickupLng)}
 
-📍 Drop location: ${toGoogleMapsLink(data.dropAddress)}
+📍 Drop location: ${toGoogleMapsLink(data.dropAddress, data.dropLat, data.dropLng)}
 
 📅 Days of travel: ${formatDaysOfTravel(data.selectedDays)}
 
