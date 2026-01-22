@@ -71,8 +71,9 @@ const Reviews = () => {
 
   const fetchReviews = async () => {
     try {
+      // Use public_reviews view to avoid exposing user_id
       const { data, error } = await supabase
-        .from("reviews")
+        .from("public_reviews")
         .select("*")
         .order("created_at", { ascending: false });
 
