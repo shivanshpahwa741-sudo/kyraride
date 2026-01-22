@@ -23,7 +23,7 @@ import { TimePicker } from "./TimePicker";
 
 import { bookingSchema, type BookingSchemaType } from "@/schemas/booking-schema";
 import { calculateFare } from "@/lib/fare-calculator";
-import { calculateDistance, getCurrentLocation, reverseGeocode } from "@/lib/google-maps";
+import { calculateDistance, getCurrentLocation, reverseGeocode, geocodeAddress } from "@/lib/google-maps";
 import type { PlaceDetails, WeekDay, FareDetails } from "@/types/booking";
 import { useAuth } from "@/hooks/useAuth";
 import { getFormattedStartDate, isNextWeekBooking, getTimeUntilCutoff } from "@/lib/booking-dates";
@@ -56,6 +56,7 @@ export function BookingForm({ prefillData, isRenewal = false }: BookingFormProps
   const [locationDetected, setLocationDetected] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<BookingSchemaType | null>(null);
+  const [isGeocodingPrefill, setIsGeocodingPrefill] = useState(!!prefillData?.pickup);
 
   // Keep a synchronous snapshot for post-payment callbacks (avoids stale closure values)
   const bookingSyncRef = useRef<{
@@ -254,15 +255,75 @@ ${fd.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     }
   }, [setValue]);
 
-  // Request location on component mount
+  // Geocode prefilled addresses for renewal
   useEffect(() => {
+    const geocodePrefillAddresses = async () => {
+      if (!prefillData?.pickup || !prefillData?.drop) {
+        setIsGeocodingPrefill(false);
+        return;
+      }
+
+      // Wait for Google Maps to load
+      let attempts = 0;
+      while (!window.google?.maps && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!window.google?.maps) {
+        console.error("Google Maps not loaded for geocoding");
+        setIsGeocodingPrefill(false);
+        return;
+      }
+
+      try {
+        // Geocode both addresses in parallel
+        const [pickupResult, dropResult] = await Promise.all([
+          geocodeAddress(prefillData.pickup),
+          geocodeAddress(prefillData.drop),
+        ]);
+
+        if (pickupResult) {
+          setValue("pickupAddress", pickupResult.address);
+          setValue("pickupPlaceId", pickupResult.placeId);
+          setValue("pickupLat", pickupResult.lat);
+          setValue("pickupLng", pickupResult.lng);
+        }
+
+        if (dropResult) {
+          setValue("dropAddress", dropResult.address);
+          setValue("dropPlaceId", dropResult.placeId);
+          setValue("dropLat", dropResult.lat);
+          setValue("dropLng", dropResult.lng);
+        }
+
+        if (pickupResult && dropResult) {
+          toast.success("Route loaded from previous booking!");
+        }
+      } catch (error) {
+        console.error("Geocoding prefill error:", error);
+      } finally {
+        setIsGeocodingPrefill(false);
+      }
+    };
+
+    if (prefillData?.pickup && prefillData?.drop) {
+      geocodePrefillAddresses();
+    }
+  }, [prefillData, setValue]);
+
+  // Request location on component mount (only if not prefilling)
+  useEffect(() => {
+    // Skip auto-detect if we have prefill data
+    if (prefillData?.pickup) return;
+
     // Small delay to ensure Google Maps script has loaded
     const timer = setTimeout(() => {
       detectCurrentLocation();
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [detectCurrentLocation]);
+  }, [detectCurrentLocation, prefillData]);
 
   // Calculate distance when both locations are set
   useEffect(() => {
@@ -390,6 +451,14 @@ ${fd.isSurgePricing ? "(Surge pricing applied)" : ""}`;
           <h3 className="font-display text-lg font-semibold text-foreground">
             Ride Details
           </h3>
+
+          {/* Geocoding loading state for renewals */}
+          {isGeocodingPrefill && (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20">
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              <span className="text-sm text-foreground">Loading your previous route...</span>
+            </div>
+          )}
 
           <FormField
             control={form.control}

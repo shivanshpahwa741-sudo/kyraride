@@ -94,6 +94,42 @@ export async function reverseGeocode(
 }
 
 /**
+ * Geocode an address string to get coordinates
+ */
+export async function geocodeAddress(
+  address: string
+): Promise<PlaceDetails | null> {
+  return new Promise((resolve) => {
+    if (!window.google?.maps) {
+      console.error("Google Maps not loaded");
+      resolve(null);
+      return;
+    }
+
+    const geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode(
+      { address },
+      (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const result = results[0];
+          const location = result.geometry.location;
+          resolve({
+            address: result.formatted_address || address,
+            placeId: result.place_id || "",
+            lat: location.lat(),
+            lng: location.lng(),
+          });
+        } else {
+          console.error("Geocoding error:", status);
+          resolve(null);
+        }
+      }
+    );
+  });
+}
+
+/**
  * Get user's current location using browser geolocation
  */
 export function getCurrentLocation(): Promise<{ lat: number; lng: number } | null> {
