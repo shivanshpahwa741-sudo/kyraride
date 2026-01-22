@@ -2,16 +2,16 @@ import type { FareConfig, FareDetails, WeekDay } from "@/types/booking";
 
 // Normal pricing
 const NORMAL_CONFIG: FareConfig = {
-  baseFare: 50,
+  baseFare: 60,
   perKmRate: 22.5,
-  minimumFare: 50,
+  minimumFare: 60,
 };
 
 // Surge pricing (10pm - 7am)
 const SURGE_CONFIG: FareConfig = {
-  baseFare: 75,
+  baseFare: 90,
   perKmRate: 33.75,
-  minimumFare: 75,
+  minimumFare: 90,
 };
 
 const SURGE_MULTIPLIER = 1.5;
