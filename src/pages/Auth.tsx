@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, User, Phone, Loader2, ArrowRight, ShieldCheck, UserPlus, LogIn } from "lucide-react";
+import { ArrowLeft, User, Phone, Loader2, ArrowRight, ShieldCheck, UserPlus, LogIn, Lock, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ const nameSchema = z.string().trim().min(2, "Name must be at least 2 characters"
 const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number");
 
 type AuthMode = "signup" | "login";
-type AuthStep = "details" | "otp";
+type AuthStep = "details" | "otp" | "pin_login" | "set_pin";
 
 const RESEND_COOLDOWN = 30; // 30 seconds cooldown
 
@@ -30,11 +30,15 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [hasPin, setHasPin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -64,14 +68,53 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const checkUserAndPin = async () => {
+    if (!validateDetails()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Check if user exists and has PIN
+      const { data, error } = await supabase.functions.invoke("auth-session", {
+        body: { action: "check_pin", phone },
+      });
+      
+      if (error) throw new Error("Failed to check account");
+      
+      if (mode === "login") {
+        if (!data?.exists) {
+          toast.error("No account found with this number. Please sign up first.");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data?.hasPin) {
+          // User has PIN - show PIN login
+          setHasPin(true);
+          setStep("pin_login");
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // Proceed with OTP flow
+      await handleSendOtp();
+    } catch (error: any) {
+      console.error("Check user error:", error);
+      toast.error(error.message || "Failed to check account");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSendOtp = async () => {
     if (!validateDetails()) return;
     
     setIsSendingOtp(true);
     
     try {
-      // For login, check if user exists first
-      if (mode === "login") {
+      // For login without PIN, check if user exists first
+      if (mode === "login" && !hasPin) {
         const { data: checkData, error: checkError } = await supabase.functions.invoke("send-otp", {
           body: { phone, action: "check" },
         });
@@ -141,19 +184,111 @@ const Auth = () => {
       // Login using the new session system
       await login(finalName, finalPhone);
       
+      // Store session token for PIN setup
+      const token = localStorage.getItem("kyra_session_token");
+      setSessionToken(token);
+      
       // Sync user to Google Sheets
       syncUserToSheets(finalPhone, finalName).catch(err => 
         console.error("Failed to sync user to sheets:", err)
       );
       
-      toast.success(mode === "signup" ? "Account created successfully!" : "Welcome back!");
-      navigate("/subscribe");
+      // Check if user has PIN - if not, prompt to set one
+      const { data: pinCheck } = await supabase.functions.invoke("auth-session", {
+        body: { action: "check_pin", phone: finalPhone },
+      });
+      
+      if (!pinCheck?.hasPin) {
+        toast.success(mode === "signup" ? "Account created!" : "Welcome back!");
+        setStep("set_pin");
+      } else {
+        toast.success(mode === "signup" ? "Account created successfully!" : "Welcome back!");
+        navigate("/subscribe");
+      }
     } catch (error: any) {
       console.error("Verify OTP error:", error);
       toast.error(error.message || "Invalid OTP. Please try again.");
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handlePinLogin = async () => {
+    if (pin.length !== 4) {
+      toast.error("Please enter your 4-digit PIN");
+      return;
+    }
+    
+    setIsVerifying(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("auth-session", {
+        body: { action: "verify_pin", phone, pin },
+      });
+      
+      if (error) throw new Error(data?.error || "Login failed");
+      
+      if (!data?.success) {
+        throw new Error(data?.error || "Invalid PIN");
+      }
+      
+      // Store session token
+      if (data.sessionToken) {
+        localStorage.setItem("kyra_session_token", data.sessionToken);
+      }
+      
+      // Login
+      await login(data.user.name, data.user.phone);
+      
+      toast.success("Welcome back!");
+      navigate("/subscribe");
+    } catch (error: any) {
+      console.error("PIN login error:", error);
+      toast.error(error.message || "Incorrect PIN. Please try again.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSetPin = async () => {
+    if (pin.length !== 4) {
+      toast.error("Please enter a 4-digit PIN");
+      return;
+    }
+    
+    if (pin !== confirmPin) {
+      toast.error("PINs don't match. Please try again.");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const token = sessionToken || localStorage.getItem("kyra_session_token");
+      
+      const { data, error } = await supabase.functions.invoke("auth-session", {
+        body: { action: "set_pin", sessionToken: token, pin },
+      });
+      
+      if (error) throw new Error("Failed to set PIN");
+      
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to set PIN");
+      }
+      
+      toast.success("PIN set successfully! You can now use it for quick login.");
+      navigate("/subscribe");
+    } catch (error: any) {
+      console.error("Set PIN error:", error);
+      toast.error(error.message || "Failed to set PIN");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const skipPinSetup = () => {
+    toast.info("You can set up a PIN later from your profile.");
+    navigate("/subscribe");
   };
 
   const handleResendOtp = useCallback(async () => {
@@ -190,7 +325,19 @@ const Auth = () => {
     setMode(mode === "login" ? "signup" : "login");
     setStep("details");
     setOtp("");
+    setPin("");
+    setConfirmPin("");
+    setHasPin(false);
     setErrors({});
+  };
+
+  const goBackToDetails = () => {
+    setStep("details");
+    setOtp("");
+    setPin("");
+    setConfirmPin("");
+    setResendCooldown(0);
+    setHasPin(false);
   };
 
   return (
@@ -298,14 +445,14 @@ const Auth = () => {
 
                 {/* Submit */}
                 <Button
-                  onClick={handleSendOtp}
-                  disabled={isSendingOtp}
+                  onClick={checkUserAndPin}
+                  disabled={isSendingOtp || isLoading}
                   className="w-full kyra-btn-primary py-6 text-lg"
                 >
-                  {isSendingOtp ? (
+                  {isSendingOtp || isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Sending OTP...
+                      Please wait...
                     </>
                   ) : (
                     <>
@@ -316,7 +463,9 @@ const Auth = () => {
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  We'll send a verification code to your phone
+                  {mode === "login" 
+                    ? "Use your PIN or OTP to log in" 
+                    : "We'll send a verification code to your phone"}
                 </p>
 
                 {/* Switch Mode */}
@@ -346,7 +495,91 @@ const Auth = () => {
                   </p>
                 </div>
               </motion.div>
-            ) : (
+            ) : step === "pin_login" ? (
+              <motion.div
+                key="pin_login"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                    <Lock className="h-8 w-8 text-accent" />
+                  </div>
+                  <h1 className="font-display text-2xl font-bold text-foreground">
+                    Enter Your PIN
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Enter your 4-digit PIN to log in
+                    <br />
+                    <span className="text-foreground font-medium">+91 {phone}</span>
+                  </p>
+                </div>
+
+                {/* PIN Input */}
+                <div className="flex justify-center">
+                  <InputOTP
+                    value={pin}
+                    onChange={setPin}
+                    maxLength={4}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <Button
+                    onClick={handlePinLogin}
+                    disabled={isVerifying || pin.length !== 4}
+                    className="w-full kyra-btn-primary py-6 text-lg"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      "Log In"
+                    )}
+                  </Button>
+
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      onClick={goBackToDetails}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Change Number
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setPin("");
+                        handleSendOtp();
+                      }}
+                      disabled={isSendingOtp}
+                      className="text-accent hover:text-accent/80"
+                    >
+                      {isSendingOtp ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Use OTP instead"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : step === "otp" ? (
               <motion.div
                 key="otp"
                 initial={{ opacity: 0, x: 20 }}
@@ -407,11 +640,7 @@ const Auth = () => {
                   <div className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      onClick={() => {
-                        setStep("details");
-                        setOtp("");
-                        setResendCooldown(0);
-                      }}
+                      onClick={goBackToDetails}
                       disabled={isSendingOtp || isVerifying}
                       className="text-muted-foreground hover:text-foreground"
                     >
@@ -436,7 +665,97 @@ const Auth = () => {
                   </div>
                 </div>
               </motion.div>
-            )}
+            ) : step === "set_pin" ? (
+              <motion.div
+                key="set_pin"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                    <KeyRound className="h-8 w-8 text-accent" />
+                  </div>
+                  <h1 className="font-display text-2xl font-bold text-foreground">
+                    Set Your PIN
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Create a 4-digit PIN for quick login next time
+                  </p>
+                </div>
+
+                {/* PIN Input */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground text-center block">
+                      Enter PIN
+                    </label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        value={pin}
+                        onChange={setPin}
+                        maxLength={4}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground text-center block">
+                      Confirm PIN
+                    </label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        value={confirmPin}
+                        onChange={setConfirmPin}
+                        maxLength={4}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleSetPin}
+                    disabled={isLoading || pin.length !== 4 || confirmPin.length !== 4}
+                    className="w-full kyra-btn-primary py-6 text-lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Setting PIN...
+                      </>
+                    ) : (
+                      "Set PIN & Continue"
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={skipPinSetup}
+                    className="w-full text-muted-foreground hover:text-foreground"
+                  >
+                    Skip for now
+                  </Button>
+                </div>
+              </motion.div>
+            ) : null}
           </AnimatePresence>
         </div>
       </motion.div>
