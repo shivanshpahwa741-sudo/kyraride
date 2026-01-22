@@ -12,6 +12,7 @@ import Contact from "./pages/Contact";
 import Reviews from "./pages/Reviews";
 import MyBookings from "./pages/MyBookings";
 import Book from "./pages/Book";
+import Renew from "./pages/Renew";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/book" element={<Book />} />
+            <Route path="/renew" element={<Renew />} />
             <Route path="/subscribe" element={<Subscribe />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/contact" element={<Contact />} />

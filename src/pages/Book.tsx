@@ -102,7 +102,7 @@ const Book = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <Link
-                to="/subscribe?renew=true"
+                to="/renew"
                 className="group block h-full"
               >
                 <div className="h-full kyra-glass rounded-2xl p-8 border border-border/30 hover:border-accent/50 transition-all duration-300 hover:shadow-glow">
