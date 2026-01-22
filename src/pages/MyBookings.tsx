@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Clock, IndianRupee, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Clock, IndianRupee, Package, Loader2, RefreshCw, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, getSessionToken } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,7 +106,7 @@ const MyBookings = () => {
         <div className="kyra-container">
           <div className="flex items-center justify-between h-16">
             <Link
-              to="/subscribe"
+              to="/book"
               className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -164,7 +164,7 @@ const MyBookings = () => {
                   You haven't made any ride subscriptions yet.
                 </p>
                 <Button asChild className="kyra-btn-primary">
-                  <Link to="/subscribe">Book Your First Ride</Link>
+                  <Link to="/book">Book Your First Ride</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -237,9 +237,23 @@ const MyBookings = () => {
                         </span>
                       </div>
 
-                      {/* Payment ID */}
-                      <div className="text-xs text-muted-foreground">
-                        Payment ID: {booking.payment_id}
+                      {/* Renew Button */}
+                      <div className="flex items-center justify-between pt-3 border-t border-border/30">
+                        <div className="text-xs text-muted-foreground">
+                          Payment ID: {booking.payment_id}
+                        </div>
+                        <Button 
+                          asChild 
+                          size="sm"
+                          className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
+                        >
+                          <Link 
+                            to={`/subscribe?renew=true&pickup=${encodeURIComponent(booking.pickup_address)}&drop=${encodeURIComponent(booking.drop_address)}&time=${encodeURIComponent(booking.pickup_time)}&days=${encodeURIComponent(booking.selected_days?.join(",") || "")}`}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Renew
+                          </Link>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

@@ -203,7 +203,7 @@ const Auth = () => {
         setStep("set_pin");
       } else {
         toast.success(mode === "signup" ? "Account created successfully!" : "Welcome back!");
-        navigate("/subscribe");
+        navigate("/book");
       }
     } catch (error: any) {
       console.error("Verify OTP error:", error);
@@ -241,7 +241,7 @@ const Auth = () => {
       await login(data.user.name, data.user.phone);
       
       toast.success("Welcome back!");
-      navigate("/subscribe");
+      navigate("/book");
     } catch (error: any) {
       console.error("PIN login error:", error);
       toast.error(error.message || "Incorrect PIN. Please try again.");
@@ -277,7 +277,7 @@ const Auth = () => {
       }
       
       toast.success("PIN set successfully! You can now use it for quick login.");
-      navigate("/subscribe");
+      navigate("/book");
     } catch (error: any) {
       console.error("Set PIN error:", error);
       toast.error(error.message || "Failed to set PIN");
@@ -288,7 +288,7 @@ const Auth = () => {
 
   const skipPinSetup = () => {
     toast.info("You can set up a PIN later from your profile.");
-    navigate("/subscribe");
+    navigate("/book");
   };
 
   const handleResendOtp = useCallback(async () => {

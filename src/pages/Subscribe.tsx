@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, RefreshCw } from "lucide-react";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,16 @@ const GOOGLE_MAPS_API_KEY = "AIzaSyCosDGgQqodf2DpG-a8QTwNXSBrotP-NAA";
 
 const Subscribe = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isLoading, logout } = useAuth();
+
+  const isRenewal = searchParams.get("renew") === "true";
+  const prefillData = isRenewal ? {
+    pickup: searchParams.get("pickup") || "",
+    drop: searchParams.get("drop") || "",
+    time: searchParams.get("time") || "",
+    days: searchParams.get("days")?.split(",").filter(Boolean) || [],
+  } : null;
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -62,11 +71,11 @@ const Subscribe = () => {
         <div className="kyra-container">
           <div className="flex items-center justify-between h-16">
             <Link
-              to="/"
+              to="/book"
               className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Back to Home</span>
+              <span className="font-medium">Back</span>
             </Link>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
@@ -97,17 +106,34 @@ const Subscribe = () => {
           >
             {/* Page Header */}
             <div className="text-center mb-10">
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Subscribe to Your Daily Ride
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Book your weekly commute with fixed pricing and guaranteed pickups
-              </p>
+              {isRenewal ? (
+                <>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 rounded-full text-sm font-medium mb-4">
+                    <RefreshCw className="h-4 w-4" />
+                    Renewal
+                  </div>
+                  <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+                    Renew Your Subscription
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Continue your commute for the next week with the same route
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+                    Subscribe to Your Daily Ride
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Book your weekly commute with fixed pricing and guaranteed pickups
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Booking Form Card */}
             <div className="kyra-glass rounded-2xl p-6 md:p-8">
-              <BookingForm />
+              <BookingForm prefillData={prefillData} isRenewal={isRenewal} />
             </div>
 
             {/* Info */}
