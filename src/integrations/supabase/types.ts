@@ -244,7 +244,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_reviews: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          rating: number | null
+          review_text: string | null
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          rating?: number | null
+          review_text?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          rating?: number | null
+          review_text?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_otps: { Args: never; Returns: undefined }
