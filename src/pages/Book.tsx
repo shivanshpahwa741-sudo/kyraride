@@ -107,8 +107,8 @@ const Book = () => {
               >
                 <div className="h-full kyra-glass rounded-2xl p-8 border border-border/30 hover:border-accent/50 transition-all duration-300 hover:shadow-glow">
                   <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
-                      <RefreshCw className="h-10 w-10 text-green-400" />
+                    <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                      <RefreshCw className="h-10 w-10 text-accent" />
                     </div>
                     <div>
                       <h2 className="font-display text-xl font-bold text-foreground mb-2">
@@ -118,7 +118,7 @@ const Book = () => {
                         Continue your existing subscription for the next week
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 text-green-400 text-sm font-medium pt-2">
+                    <div className="flex items-center gap-2 text-accent text-sm font-medium pt-2">
                       <Calendar className="h-4 w-4" />
                       <span>Extend for Next Week</span>
                     </div>
