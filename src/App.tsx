@@ -11,6 +11,7 @@ import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Reviews from "./pages/Reviews";
 import MyBookings from "./pages/MyBookings";
+import Book from "./pages/Book";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/book" element={<Book />} />
             <Route path="/subscribe" element={<Subscribe />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/contact" element={<Contact />} />

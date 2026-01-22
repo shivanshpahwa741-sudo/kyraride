@@ -33,7 +33,19 @@ import { bookRideToSheets } from "@/lib/google-sheets";
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 const MIN_DAYS_REQUIRED = 2;
 
-export function BookingForm() {
+interface PrefillData {
+  pickup: string;
+  drop: string;
+  time: string;
+  days: string[];
+}
+
+interface BookingFormProps {
+  prefillData?: PrefillData | null;
+  isRenewal?: boolean;
+}
+
+export function BookingForm({ prefillData, isRenewal = false }: BookingFormProps) {
   const { user } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,16 +159,16 @@ ${fd.isSurgePricing ? "(Surge pricing applied)" : ""}`;
     defaultValues: {
       name: user?.name || "",
       phone: user?.phone || "",
-      pickupAddress: "",
+      pickupAddress: prefillData?.pickup || "",
       pickupPlaceId: "",
       pickupLat: 0,
       pickupLng: 0,
-      dropAddress: "",
+      dropAddress: prefillData?.drop || "",
       dropPlaceId: "",
       dropLat: 0,
       dropLng: 0,
-      pickupTime: "",
-      selectedDays: [],
+      pickupTime: prefillData?.time || "",
+      selectedDays: (prefillData?.days || []) as WeekDay[],
     },
   });
 

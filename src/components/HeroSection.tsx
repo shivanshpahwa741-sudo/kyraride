@@ -92,7 +92,7 @@ const HeroSection = () => {
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
-            to="/auth"
+            to="/book"
             className="inline-flex w-[240px] box-border items-center justify-center px-8 py-5 border-2 border-transparent bg-[hsl(32,35%,87%)] text-[hsl(351,55%,12%)] font-semibold text-lg rounded-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-[0_0_30px_rgba(232,216,196,0.5)] text-center"
           >
             Reserve Your Ride
