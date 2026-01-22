@@ -245,7 +245,7 @@ const MyBookings = () => {
                         <Button 
                           asChild 
                           size="sm"
-                          className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
+                          className="bg-accent/20 text-accent hover:bg-accent/30 border border-accent/30"
                         >
                           <Link 
                             to={`/subscribe?renew=true&pickup=${encodeURIComponent(booking.pickup_address)}&drop=${encodeURIComponent(booking.drop_address)}&time=${encodeURIComponent(booking.pickup_time)}&days=${encodeURIComponent(booking.selected_days?.join(",") || "")}`}

@@ -108,7 +108,7 @@ const Subscribe = () => {
             <div className="text-center mb-10">
               {isRenewal ? (
                 <>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 rounded-full text-sm font-medium mb-4">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm font-medium mb-4">
                     <RefreshCw className="h-4 w-4" />
                     Renewal
                   </div>
