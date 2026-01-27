@@ -1,8 +1,7 @@
 // Always route to the correct support number.
 // E.164 without '+'
 const WHATSAPP_SUPPORT_PHONE = "919686638787";
-const DEFAULT_MESSAGE = "Hi Kyra! I'd like to know more about your ride services.";
-const WHATSAPP_SUPPORT_LINK = `https://api.whatsapp.com/send?phone=${WHATSAPP_SUPPORT_PHONE}&text=${encodeURIComponent(DEFAULT_MESSAGE)}`;
+const WHATSAPP_SUPPORT_LINK = `https://api.whatsapp.com/send?phone=${WHATSAPP_SUPPORT_PHONE}`;
 
 /**
  * Open Kyra support chat.
