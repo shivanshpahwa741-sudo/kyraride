@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { MessageCircle, HelpCircle, Clock, Shield, Heart, Mail } from "lucide-react";
 
 const Contact = () => {
-  const whatsappLink = "https://wa.me/919353937349?text=Hi%20Kyra%2C%20I%20need%20help%20with...";
+  const whatsappLink = "https://wa.me/message/PWIMWJHRYGQRL1";
   const emailAddress = "Admin@kyraries.in";
 
   const helpTopics = [
