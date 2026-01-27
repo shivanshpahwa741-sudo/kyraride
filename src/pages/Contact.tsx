@@ -43,15 +43,13 @@ const Contact = () => {
             <p className="text-muted-foreground mb-4">
               For the quickest response regarding rides, bookings, or support, message us directly:
             </p>
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => window.open(whatsappLink, '_blank', 'noopener,noreferrer')}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
               Chat with Kyra Support
-            </a>
+            </button>
           </section>
 
           {/* Email Section */}
