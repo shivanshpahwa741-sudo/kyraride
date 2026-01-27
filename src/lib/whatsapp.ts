@@ -1,9 +1,7 @@
-const WHATSAPP_MESSAGE_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
-
-// Fallback uses the phone number directly (more reliable than a message deep-link).
+// Always route to the correct support number.
 // E.164 without '+'
 const WHATSAPP_SUPPORT_PHONE = "919686638787";
-const WHATSAPP_FALLBACK_LINK = `https://api.whatsapp.com/send?phone=${WHATSAPP_SUPPORT_PHONE}`;
+const WHATSAPP_SUPPORT_LINK = `https://api.whatsapp.com/send?phone=${WHATSAPP_SUPPORT_PHONE}`;
 
 /**
  * Open Kyra support chat.
@@ -11,14 +9,14 @@ const WHATSAPP_FALLBACK_LINK = `https://api.whatsapp.com/send?phone=${WHATSAPP_S
  */
 export function openWhatsAppSupport() {
   try {
-    const w = window.open(WHATSAPP_MESSAGE_LINK, "_blank", "noopener,noreferrer");
+    const w = window.open(WHATSAPP_SUPPORT_LINK, "_blank", "noopener,noreferrer");
     // If a popup blocker prevents opening a new tab, navigate in the current tab.
-    if (!w) window.location.href = WHATSAPP_FALLBACK_LINK;
+    if (!w) window.location.href = WHATSAPP_SUPPORT_LINK;
   } catch {
-    window.location.href = WHATSAPP_FALLBACK_LINK;
+    window.location.href = WHATSAPP_SUPPORT_LINK;
   }
 }
 
 export function getWhatsAppSupportLink() {
-  return WHATSAPP_MESSAGE_LINK;
+  return WHATSAPP_SUPPORT_LINK;
 }
