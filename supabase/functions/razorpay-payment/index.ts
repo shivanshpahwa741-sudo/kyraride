@@ -61,7 +61,7 @@ serve(async (req) => {
     const action = url.pathname.split("/").pop();
 
     if (req.method === "POST" && action === "create-order") {
-      const body: CreateOrderRequest = await req.json();
+      const body: CreateOrderRequest & { phone?: string } = await req.json();
       
       if (!body.amount || body.amount <= 0) {
         return new Response(
@@ -69,6 +69,75 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Validate amount range (₹10 to ₹50,000)
+      if (body.amount < 10 || body.amount > 50000) {
+        return new Response(
+          JSON.stringify({ error: "Amount must be between ₹10 and ₹50,000" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Require phone number for authentication
+      if (!body.phone) {
+        return new Response(
+          JSON.stringify({ error: "Phone number required for payment" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Format and validate phone
+      const phoneDigits = body.phone.replace(/\D/g, "");
+      const formattedPhone = phoneDigits.slice(-10);
+
+      if (formattedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(formattedPhone)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid phone number" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Create Supabase client and verify user exists
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      // Verify user has completed phone verification
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("phone", formattedPhone)
+        .maybeSingle();
+
+      if (!profile) {
+        return new Response(
+          JSON.stringify({ error: "Please complete phone verification before making payment" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Validate and sanitize notes
+      if (body.notes) {
+        const noteKeys = Object.keys(body.notes);
+        if (noteKeys.length > 10) {
+          return new Response(
+            JSON.stringify({ error: "Too many note fields" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        for (const key of noteKeys) {
+          if (key.length > 50 || (typeof body.notes[key] === 'string' && body.notes[key].length > 200)) {
+            return new Response(
+              JSON.stringify({ error: "Note field too long" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      }
+
+      console.log(`Creating order for verified user: ${profile.name} (${formattedPhone})`);
+
 
       // Convert to paise (Razorpay expects amount in smallest currency unit)
       const amountInPaise = Math.round(body.amount * 100);

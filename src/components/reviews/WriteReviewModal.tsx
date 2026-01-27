@@ -74,34 +74,28 @@ const WriteReviewModal = ({
     try {
       let imageUrl = "";
 
-      // Upload image only if selected
+      // Upload image via secure edge function (validates user profile)
       if (selectedImage) {
-        const fileExt = selectedImage.name.split(".").pop()?.toLowerCase();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const formData = new FormData();
+        formData.append('file', selectedImage);
+        formData.append('phone', user.phone);
 
-        console.log("Uploading image:", fileName, "Type:", selectedImage.type, "Size:", selectedImage.size);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("review-images")
-          .upload(fileName, selectedImage, {
-            contentType: selectedImage.type,
-            upsert: false,
-          });
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+          "upload-review-image",
+          { body: formData }
+        );
 
         if (uploadError) {
-          console.error("Storage upload error:", uploadError);
-          throw new Error(`Upload failed: ${uploadError.message}`);
+          console.error("Upload error:", uploadError);
+          throw new Error("Upload failed: " + uploadError.message);
         }
 
-        console.log("Upload successful:", uploadData);
+        if (uploadData?.error) {
+          throw new Error(uploadData.error);
+        }
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from("review-images")
-          .getPublicUrl(fileName);
-
-        imageUrl = urlData.publicUrl;
-        console.log("Public URL:", imageUrl);
+        imageUrl = uploadData.url;
+        console.log("Secure upload successful:", imageUrl);
       }
 
       // Submit review through secure edge function
