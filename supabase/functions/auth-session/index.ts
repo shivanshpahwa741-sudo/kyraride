@@ -25,6 +25,18 @@ async function hashPin(pin: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Constant-time string comparison to prevent timing attacks
+function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -278,9 +290,12 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
-      // Verify PIN
+      // Verify PIN using constant-time comparison to prevent timing attacks
       const pinHash = await hashPin(pin);
-      if (pinHash !== profile.pin_hash) {
+      if (!constantTimeCompare(pinHash, profile.pin_hash || '')) {
+        // Add small random delay to mask any remaining timing patterns
+        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 50));
+        
         return new Response(
           JSON.stringify({ error: "Incorrect PIN" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }

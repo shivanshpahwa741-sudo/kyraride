@@ -70,12 +70,12 @@ export function useRazorpay({ onSuccess, onError }: UseRazorpayProps) {
     };
   }, [onError]);
 
-  const createOrder = useCallback(async (amount: number, notes?: Record<string, string>) => {
+  const createOrder = useCallback(async (amount: number, phone: string, notes?: Record<string, string>) => {
     try {
       setIsLoading(true);
       
       const { data, error } = await supabase.functions.invoke("razorpay-payment/create-order", {
-        body: { amount, notes },
+        body: { amount, phone, notes },
       });
 
       if (error) {
@@ -131,8 +131,8 @@ export function useRazorpay({ onSuccess, onError }: UseRazorpayProps) {
     try {
       setIsLoading(true);
 
-      // Create order
-      const orderData = await createOrder(amount, notes);
+      // Create order with phone for authentication
+      const orderData = await createOrder(amount, customerPhone, notes);
       
       if (!orderData?.orderId || !orderData?.keyId) {
         throw new Error("Invalid order response");

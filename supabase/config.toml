@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.get-bookings]
 verify_jwt = false
+
+[functions.upload-review-image]
+verify_jwt = false
