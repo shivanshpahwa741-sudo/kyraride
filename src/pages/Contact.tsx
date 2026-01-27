@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { MessageCircle, HelpCircle, Clock, Shield, Heart, Mail } from "lucide-react";
+import { openWhatsAppSupport } from "@/lib/whatsapp";
 
 const Contact = () => {
-  const whatsappLink = "https://wa.me/message/PWIMWJHRYGQRL1";
   const emailAddress = "Admin@kyraries.in";
 
   const helpTopics = [
@@ -43,15 +43,14 @@ const Contact = () => {
             <p className="text-muted-foreground mb-4">
               For the quickest response regarding rides, bookings, or support, message us directly:
             </p>
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={openWhatsAppSupport}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
               Chat with Kyra Support
-            </a>
+            </button>
           </section>
 
           {/* Email Section */}
