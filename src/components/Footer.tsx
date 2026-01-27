@@ -1,8 +1,9 @@
-import { Phone } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import kyraLogo from "@/assets/kyra-logo-dark.png";
 
 const CONTACT_NUMBER = "+91 96866 38787";
+const CONTACT_EMAIL = "Admin@kyraries.in";
 const WHATSAPP_LINK = "https://wa.me/message/PWIMWJHRYGQRL1";
 const INSTAGRAM_LINK = "https://www.instagram.com/kyra.rides/";
 const LINKEDIN_LINK = "https://www.linkedin.com/company/kyrarides/posts/?feedView=all";
@@ -17,13 +18,22 @@ const Footer = () => {
           <img src={kyraLogo} alt="Kyra" className="h-16 md:h-20 mb-6" />
           
           {/* Contact */}
-          <a 
-            href={`tel:${CONTACT_NUMBER.replace(/\s/g, '')}`}
-            className="inline-flex items-center gap-3 text-accent hover:text-accent/80 transition-colors text-xl font-medium mb-8"
-          >
-            <Phone className="w-5 h-5" />
-            {CONTACT_NUMBER}
-          </a>
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <a 
+              href={`tel:${CONTACT_NUMBER.replace(/\s/g, '')}`}
+              className="inline-flex items-center gap-3 text-accent hover:text-accent/80 transition-colors text-xl font-medium"
+            >
+              <Phone className="w-5 h-5" />
+              {CONTACT_NUMBER}
+            </a>
+            <a 
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="inline-flex items-center gap-3 text-muted-foreground hover:text-accent transition-colors text-base"
+            >
+              <Mail className="w-4 h-4" />
+              {CONTACT_EMAIL}
+            </a>
+          </div>
 
           {/* Social Icons */}
           <div className="flex items-center gap-6">
