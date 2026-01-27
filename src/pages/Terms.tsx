@@ -130,7 +130,14 @@ const Terms = () => {
                 >
                   WhatsApp
                 </a>
-                {" "}or call{" "}
+                {", "}email us at{" "}
+                <a 
+                  href="mailto:Admin@kyraries.in" 
+                  className="text-accent hover:text-accent/80 transition-colors"
+                >
+                  Admin@kyraries.in
+                </a>
+                {", "}or call{" "}
                 <a 
                   href="tel:+919686638787" 
                   className="text-accent hover:text-accent/80 transition-colors"

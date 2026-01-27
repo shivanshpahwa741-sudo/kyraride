@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { MessageCircle, HelpCircle, Clock, Shield, Heart } from "lucide-react";
+import { MessageCircle, HelpCircle, Clock, Shield, Heart, Mail } from "lucide-react";
 
 const Contact = () => {
   const whatsappLink = "https://wa.me/919353937349?text=Hi%20Kyra%2C%20I%20need%20help%20with...";
+  const emailAddress = "Admin@kyraries.in";
 
   const helpTopics = [
     { title: "Ride Support", description: "Real-time help with your current booking." },
@@ -50,6 +51,26 @@ const Contact = () => {
             >
               <MessageCircle className="w-5 h-5" />
               Chat with Kyra Support
+            </a>
+          </section>
+
+          {/* Email Section */}
+          <section className="mb-10 p-6 bg-muted/30 rounded-2xl border border-border">
+            <div className="flex items-center gap-3 mb-4">
+              <Mail className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Email
+              </h2>
+            </div>
+            <p className="text-muted-foreground mb-4">
+              For formal inquiries, partnerships, or detailed support requests:
+            </p>
+            <a
+              href={`mailto:${emailAddress}`}
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              <Mail className="w-5 h-5" />
+              {emailAddress}
             </a>
           </section>
 
